@@ -1,7 +1,7 @@
 #include <windows.h>
-#include"cgame.h"
+#include"game.h"
 #include"map.h"
-cgame MainGame;
+CGame MainGame;
 
 /* This is where all the input to the window goes to */
 LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {

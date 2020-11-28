@@ -1,9 +1,9 @@
 #pragma once
 #include<Windows.h>
-class Player
+class CPlayer
 {
 public:
-	void next_movement();
+	void MoveNext();
 	char* GetSkinFile(int SkinID);
 	int m_PlayerState;
 	int m_PlayerDetail;//more accurate state

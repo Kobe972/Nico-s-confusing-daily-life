@@ -18,9 +18,6 @@
     <ClCompile Include="Nico%27s_confusing_daily_life.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="cgame.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -30,11 +27,11 @@
     <ClCompile Include="button.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="game.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cgame.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="player.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -42,6 +39,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="button.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="game.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
