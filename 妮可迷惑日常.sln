@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30523.141
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "妮可迷惑日常", "妮可迷惑日常\妮可迷惑日常.vcxproj", "{2777D0AC-E7C5-4AFB-AA0C-52FD283D83CF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2777D0AC-E7C5-4AFB-AA0C-52FD283D83CF}.Debug|x64.ActiveCfg = Debug|x64
+		{2777D0AC-E7C5-4AFB-AA0C-52FD283D83CF}.Debug|x64.Build.0 = Debug|x64
+		{2777D0AC-E7C5-4AFB-AA0C-52FD283D83CF}.Debug|x86.ActiveCfg = Debug|Win32
+		{2777D0AC-E7C5-4AFB-AA0C-52FD283D83CF}.Debug|x86.Build.0 = Debug|Win32
+		{2777D0AC-E7C5-4AFB-AA0C-52FD283D83CF}.Release|x64.ActiveCfg = Release|x64
+		{2777D0AC-E7C5-4AFB-AA0C-52FD283D83CF}.Release|x64.Build.0 = Release|x64
+		{2777D0AC-E7C5-4AFB-AA0C-52FD283D83CF}.Release|x86.ActiveCfg = Release|Win32
+		{2777D0AC-E7C5-4AFB-AA0C-52FD283D83CF}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A7283960-BD9C-4F8B-8355-3F7B8B52828F}
+	EndGlobalSection
+EndGlobal
