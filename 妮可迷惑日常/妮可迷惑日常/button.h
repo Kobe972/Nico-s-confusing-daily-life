@@ -1,11 +1,11 @@
 #pragma once
 #include<Windows.h>
-class Button
+class CButton
 {
 public:
-	RECT boarder[3]; //ÒÀ´ÎÎªÊó±êÎ´ÒÆ¹ı¡¢Êó±êÒÆ¹ı¡¢Êó±ê°´ÏÂÊ±µÄ°´Å¥±ß½ç
 	void Init();
-	char* Style[3];//¸÷×´Ì¬Ê±µÄÍ¼±êµØÖ·
+	RECT boarder[3]; //ä¾æ¬¡ä¸ºé¼ æ ‡æœªç§»è¿‡ã€é¼ æ ‡ç§»è¿‡ã€é¼ æ ‡æŒ‰ä¸‹æ—¶çš„æŒ‰é’®è¾¹ç•Œ
+	char* Style[3];//å„çŠ¶æ€æ—¶çš„å›¾æ ‡åœ°å€
 	int m_ID;
 };
 

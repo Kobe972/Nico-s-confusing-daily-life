@@ -1,0 +1,7 @@
+﻿  game.cpp
+  map.cpp
+  Nico's_confusing_daily_life.cpp
+C:\Users\生活的旋律\Desktop\Main\Nico-s-confusing-daily-life-main\妮可迷惑日常\妮可迷惑日常\Nico's_confusing_daily_life.cpp(68,12): warning C4244: “return”: 从“WPARAM”转换到“int”，可能丢失数据
+  player.cpp
+  正在生成代码...
+  妮可迷惑日常.vcxproj -> C:\Users\生活的旋律\Desktop\Main\Nico-s-confusing-daily-life-main\妮可迷惑日常\x64\Debug\妮可迷惑日常.exe
