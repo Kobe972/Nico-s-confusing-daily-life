@@ -1,18 +1,23 @@
 #pragma once
 #include<Windows.h>
-class CObstacle
+#include "GameEntry.h"
+class CObstacle : CGameEntryMoveable
 {
 public:
 	void InitByID(int ID);
-	void MoveNext(); //only use if m_IsAnimate=true
+	//void MoveNext(); 
 
 private:
 	int from, to;//it's the position in offscreen!
 	int m_untouchable;//if collision detection in BOB is bad
 	bool m_IsAnimate{ false };//might not use
 	RECT boarder;
+
+public:
+	void Draw();
+	void MoveNext();	//only use if m_IsAnimate=true
 };
-class CField
+class CField : CGameEntry
 {
 public:
 	void InitByID(int ID);
@@ -20,6 +25,9 @@ public:
 private:
 	int from, to;//it's the position in offscreen!
 	RECT boarder;
+
+public:
+	void Draw();
 };
 class CTemplate
 {

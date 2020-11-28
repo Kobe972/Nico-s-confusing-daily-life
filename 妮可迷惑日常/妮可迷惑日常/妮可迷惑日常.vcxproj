@@ -143,6 +143,7 @@
   <ItemGroup>
     <ClCompile Include="button.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="GameEntry.cpp" />
     <ClCompile Include="map.cpp" />
     <ClCompile Include="Nico%27s_confusing_daily_life.cpp" />
     <ClCompile Include="player.cpp" />
@@ -150,8 +151,13 @@
   <ItemGroup>
     <ClInclude Include="button.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="GameEntry.h" />
     <ClInclude Include="map.h" />
+    <ClInclude Include="pch.h" />
     <ClInclude Include="player.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
