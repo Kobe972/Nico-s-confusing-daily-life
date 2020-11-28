@@ -1,12 +1,8 @@
-﻿  button.cpp
-C:\Users\生活的旋律\Desktop\Main\Nico-s-confusing-daily-life-Advanced-modify\妮可迷惑日常\妮可迷惑日常\button.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+﻿  Nico's_confusing_daily_life.cpp
+E:\编程\C++\妮可迷惑日常\妮可迷惑日常\button.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+E:\编程\C++\妮可迷惑日常\妮可迷惑日常\Nico's_confusing_daily_life.cpp(68,12): warning C4244: “return”: 从“WPARAM”转换到“int”，可能丢失数据
   game.cpp
-C:\Users\生活的旋律\Desktop\Main\Nico-s-confusing-daily-life-Advanced-modify\妮可迷惑日常\妮可迷惑日常\button.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-  GameEntry.cpp
-  map.cpp
-  Nico's_confusing_daily_life.cpp
-C:\Users\生活的旋律\Desktop\Main\Nico-s-confusing-daily-life-Advanced-modify\妮可迷惑日常\妮可迷惑日常\button.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-C:\Users\生活的旋律\Desktop\Main\Nico-s-confusing-daily-life-Advanced-modify\妮可迷惑日常\妮可迷惑日常\Nico's_confusing_daily_life.cpp(68,12): warning C4244: “return”: 从“WPARAM”转换到“int”，可能丢失数据
+E:\编程\C++\妮可迷惑日常\妮可迷惑日常\button.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
   player.cpp
   正在生成代码...
-  妮可迷惑日常.vcxproj -> C:\Users\生活的旋律\Desktop\Main\Nico-s-confusing-daily-life-Advanced-modify\妮可迷惑日常\x64\Debug\妮可迷惑日常.exe
+  妮可迷惑日常.vcxproj -> E:\编程\C++\妮可迷惑日常\x64\Debug\妮可迷惑日常.exe
