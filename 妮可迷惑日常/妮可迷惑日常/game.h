@@ -1,13 +1,10 @@
 #pragma once
 #include<ddraw.h>
-#include<Windows.h>
+#include "pch.h"
 #include"player.h"
 #include"map.h"
 #include"button.h"
-class CPoint
-{
-	int m_x, m_y;
-};
+
 class CDirectDrawObjects
 {
 public:
@@ -32,7 +29,8 @@ public:
 	
 	~CGame() {};
 
-	enum GameState { eGameStateDefault = 0 };
+	enum EGameState { eGameStateDefault = 0, eGameStateCount };	
+	//GameState 最终将Default改成第一个状态， 否则会有问题！！！！！！！
 
 private:
 	CPlayer m_player;
@@ -40,7 +38,7 @@ private:
 	int m_OpponentCnt;
 	int m_OpponentProceses; //from 1 to 100,indicates how much 
 	
-	GameState eGameState{ GameState::eGameStateDefault };
+	EGameState eGameState{ EGameState::eGameStateDefault };
 	CMap m_map;
 	int m_CurrentObstacles; //indicates the obstacle the player is going through
 	CDirectDrawObjects m_DDrawStuff;//ddrawobj used in painting
@@ -80,7 +78,20 @@ public:
 
 	//A set of functions that can set arguments.
 public:
-	inline void SetGameState(GameState eGameStateCurrent);
+	inline void SetGameState(EGameState eGameStateCurrent);
 	inline void SetWindowHandle(HWND hwnd);
+
+private:
+	HWND m_hWnd;
+
+private:
+	//不同阶段初始化函数和函数指针数组
+
+private:
+	//不同阶段绘图函数和函数指针数组
+
+private:
+	//不同阶段逻辑运行函数和函数指针数组
+
 };
 
