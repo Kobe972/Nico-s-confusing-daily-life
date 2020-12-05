@@ -1,25 +1,13 @@
 #pragma once
 #include<ddraw.h>
-#include "pch.h"
-#include"player.h"
 #include"map.h"
-#include"button.h"
-
-class CDirectDrawObjects
-{
-public:
-	LPDIRECTDRAW7         lpdd=NULL;   // dd object
-	LPDIRECTDRAWSURFACE7  lpddsprimary = NULL;   // dd primary surface
-	LPDIRECTDRAWSURFACE7  lpddsback = NULL;   // dd back surface
-	LPDIRECTDRAWSURFACE7  lpddsoffscreen = NULL;   // dd off screen surface
-	LPDIRECTDRAWPALETTE   lpddpal = NULL;   // a pointer to the created dd palette
-	LPDIRECTDRAWCLIPPER   lpddclipper = NULL;   // dd clipper
-	PALETTEENTRY          palette[256];          // color palette
-	PALETTEENTRY          save_palette[256];     // used to save palettes
-	DDSURFACEDESC2        ddsd;                  // a direct draw surface description struct
-	DDBLTFX               ddbltfx;               // used to fill
-	DDSCAPS2              ddscaps; // a direct draw surface capabilities struct
-};
+#include"GUI.h"
+#include"player.h"
+#include <Windows.h>
+//then define game states
+#define MAINMENU 0
+#pragma warning
+EXTERN_BOB_OBJECTS()
 class CGame
 {
 public:
@@ -29,8 +17,6 @@ public:
 	
 	~CGame() {};
 
-	enum EGameState { eGameStateDefault = 0, eGameStateCount };	
-	//GameState 最终将Default改成第一个状态， 否则会有问题！！！！！！！
 
 private:
 	CPlayer m_player;
@@ -38,10 +24,9 @@ private:
 	int m_OpponentCnt;
 	int m_OpponentProceses; //from 1 to 100,indicates how much 
 	
-	EGameState eGameState{ EGameState::eGameStateDefault };
+	int m_state;
 	CMap m_map;
 	int m_CurrentObstacles; //indicates the obstacle the player is going through
-	CDirectDrawObjects m_DDrawStuff;//ddrawobj used in painting
 	CButton m_button[100];
 	SOCKET conn;//socket used to connect to server
 private:
@@ -78,7 +63,7 @@ public:
 
 	//A set of functions that can set arguments.
 public:
-	inline void SetGameState(EGameState eGameStateCurrent);
+	inline void SetGameState(int GameState);
 	inline void SetWindowHandle(HWND hwnd);
 
 private:

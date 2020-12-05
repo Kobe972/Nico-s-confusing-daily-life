@@ -1,5 +1,7 @@
 #include "BobClass.h"
+#include "pch.h"
 
+/*
 extern LPDIRECTDRAW7        lpdd;  // dd object
 extern LPDIRECTDRAWSURFACE7 lpddsprimary;  // dd primary surface
 extern LPDIRECTDRAWSURFACE7 lpddsback;  // dd back surface
@@ -19,13 +21,18 @@ extern HINSTANCE main_instance; // save the instance
 extern int screen_width,            // width of screen
 screen_height;           // height of screen
 
-extern int min_clip_x,                             // clipping rectangle 
+extern int min_clip_x,                             // clipping rectangle
 max_clip_x,
 min_clip_y,
 max_clip_y;
 
 extern int window_client_x0;   // used to track the starting (x,y) client area for
 extern int window_client_y0;   // for windowed mode directdraw operations
+*/
+
+
+CREATE_BOB_OBJECTS()
+
 // DEFINES ////////////////////////////////////////////////
 UINT RGBBIT(UCHAR a, UCHAR r, UCHAR g, UCHAR b) { return b + (g << 8) + (r << 16) + (a << 24); }
 
@@ -91,7 +98,7 @@ int DDraw_Init(int width, int height)
     if (FAILED(lpddsprimary->SetClipper(lpddclipperwin)))
         return(0);
 
- // return success
+    // return success
     return(1);
 } // end DDraw_Init
 
@@ -280,7 +287,7 @@ int BITMAP_FILE::Load_File(const char* filename)
     fread(buffer, sizeof(UINT), Height * Width, fp);
 
     fclose(fp);
-    Flip_Bitmap(buffer, Width, Height);
+   Flip_Bitmap(buffer, Width, Height);
     // return success
     return(1);
 } // end Load_Bitmap_File
@@ -332,8 +339,9 @@ int BOB::Create(           // the bob to create
     int _width, int _height, // size of bob
     int _num_frames,        // number of frames
     int _attr,              // attrs
-    int mem_flags         // memory flags in DD format
-    )
+    int mem_flags,         // memory flags in DD format
+    UINT _color_key_value // default color key
+)
 
 {
     // Create the BOB object, note that all BOBs 
@@ -389,7 +397,7 @@ int BOB::Create(           // the bob to create
         ddsd.dwSize = sizeof(ddsd);
         ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
 
-        ddsd.dwWidth = width + width_fill;
+        ddsd.dwWidth = width;
         ddsd.dwHeight = height;
 
         // set surface to offscreen plain
@@ -398,6 +406,13 @@ int BOB::Create(           // the bob to create
         // create the surfaces, return failure if problem
         if (FAILED(lpdd->CreateSurface(&ddsd, images + index, NULL)))
             return(0);
+
+        DDCOLORKEY color_key; // used to set color key
+        color_key.dwColorSpaceLowValue = _color_key_value;
+        color_key.dwColorSpaceHighValue = _color_key_value;
+
+        // now set the color key for source blitting
+        images[index]->SetColorKey(DDCKEY_SRCBLT, &color_key);
     } // end for index
 
 // return success
@@ -502,7 +517,7 @@ int BOB::Draw(               // bob to draw
 
     // blt to destination surface
     if (FAILED(dest->Blt(&dest_rect, images[curr_frame],
-        &source_rect, (DDBLT_WAIT),
+        &source_rect, (DDBLT_WAIT | DDBLT_KEYSRC),
         NULL)))
         return(0);
 
@@ -559,8 +574,8 @@ int BOB::Load_Frame( // bob to load with data
 
     DDSURFACEDESC2 ddsd;  //  direct draw surface description 
 
-    UINT *source_ptr,   // working pointers
-         *dest_ptr;
+    UINT* source_ptr,   // working pointers
+        * dest_ptr;
 
     // test the mode of extraction, cell based or absolute
     if (mode == BITMAP_EXTRACT_MODE_CELL)
@@ -590,10 +605,10 @@ int BOB::Load_Frame( // bob to load with data
     int lpitch = (int)(ddsd.lPitch >> 2);
     for (int index_y = 0; index_y < height; index_y++)
     {
-        memcpy(dest_ptr, source_ptr, width); // copy next line of data to destination
+        memcpy(dest_ptr, source_ptr, width * sizeof(UINT)); // copy next line of data to destination
 
         // advance pointers
-        dest_ptr += lpitch; // (bob->width+bob->width_fill);
+        dest_ptr += lpitch;
         source_ptr += bitmap->bitmapinfoheader.biWidth;
     } // end for index_y
 
@@ -617,78 +632,43 @@ int BOB::Animate()
     // test the level of animation
     if (attr & BOB_ATTR_SINGLE_FRAME)
     {
-        // current frame always = 0
-        curr_frame = 0;
+        curr_frame = 0; // current frame always = 0
         return(1);
     } // end if
-    else
-        if (attr & BOB_ATTR_MULTI_FRAME)
+    else if (attr & BOB_ATTR_MULTI_FRAME)
+    {
+        if (++anim_counter >= anim_count_max) // update the counter and test if its time to increment frame
         {
-            // update the counter and test if its time to increment frame
-            if (++anim_counter >= anim_count_max)
+            anim_counter = 0; // reset counter
+            if (++curr_frame >= num_frames) // move to next frame
+                curr_frame = 0;
+        }
+    }
+    else if (attr & BOB_ATTR_MULTI_ANIM)
+    {
+        if (++anim_counter >= anim_count_max) // first test if its time to animate
+        {
+            anim_counter = 0; // reset counter
+            anim_index++; // increment the animation frame index
+            curr_frame = animations[curr_animation][anim_index]; // extract the next frame from animation list 
+            if (curr_frame == -1) // is this and end sequence flag -1
             {
-                // reset counter
-                anim_counter = 0;
-
-                // move to next frame
-                if (++curr_frame >= num_frames)
-                    curr_frame = 0;
-
-            } // end if
-
-        } // end elseif
-        else
-            if (attr & BOB_ATTR_MULTI_ANIM)
-            {
-                // this is the most complex of the animations it must look up the
-                // next frame in the animation sequence
-
-                // first test if its time to animate
-                if (++anim_counter >= anim_count_max)
+                if (attr & BOB_ATTR_ANIM_ONE_SHOT) // test if this is a single shot animation
                 {
-                    // reset counter
-                    anim_counter = 0;
-
-                    // increment the animation frame index
-                    anim_index++;
-
-                    // extract the next frame from animation list 
-                    curr_frame = animations[curr_animation][anim_index];
-
-                    // is this and end sequence flag -1
-                    if (curr_frame == -1)
-                    {
-                        // test if this is a single shot animation
-                        if (attr & BOB_ATTR_ANIM_ONE_SHOT)
-                        {
-                            // set animation state message to done
-                            anim_state = BOB_STATE_ANIM_DONE;
-
-                            // reset frame back one
-                            anim_index--;
-
-                            // extract animation frame
-                            curr_frame = animations[curr_animation][anim_index];
-
-                        } // end if
-                        else
-                        {
-                            // reset animation index
-                            anim_index = 0;
-
-                            // extract first animation frame
-                            curr_frame = animations[curr_animation][anim_index];
-                        } // end else
-
-                    }  // end if
-
-                } // end if
-
-            } // end elseif
-
-         // return success
-    return(1);
-
+                    anim_state = BOB_STATE_ANIM_DONE; // set animation state message to done
+                    anim_index--; // reset frame back one
+                }
+                else
+                {
+                    if (next_animation[curr_animation] != -1) //this is a mere-once animation 
+                        curr_animation = next_animation[curr_animation];
+                    anim_index = 0; // reset animation index
+                }
+            }
+            curr_frame = animations[curr_animation][anim_index]; // extract first animation frame
+        }
+    }
+    return(1); // return success
 } // end Amimate_BOB
 
 ///////////////////////////////////////////////////////////
@@ -741,12 +721,13 @@ int BOB::Move()
 
 ///////////////////////////////////////////////////////////
 
-int BOB::Load_Animation(int _anim_index, int num_frames, int* sequence)
+int BOB::Load_Animation(int _anim_index, int num_frames, int* sequence, int _next_animation)
 {
     // this function load an animation sequence for a bob
     // the sequence consists of frame indices, the function
     // will append a -1 to the end of the list so the display
     // software knows when to restart the animation sequence
+    // indicate the next animation you want to frame or -1 for circle animation
 
     // allocate memory for bob animation
     if (!(animations[_anim_index] = (int*)malloc((num_frames + 1) * sizeof(int))))
@@ -759,6 +740,9 @@ int BOB::Load_Animation(int _anim_index, int num_frames, int* sequence)
 
     // set the end of the list to a -1
     animations[_anim_index][index] = -1;
+
+    // set the next_animation
+    next_animation[_anim_index] = _next_animation;
 
     // return success
     return(1);
@@ -825,7 +809,7 @@ int DDraw_Flip(void)
     if (FAILED(lpddsprimary->Blt(&dest_rect, lpddsback, NULL, DDBLT_WAIT, NULL)))
         return(0);
 
- // return success
+    // return success
     return(1);
 
 } // end DDraw_Flip

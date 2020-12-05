@@ -1,69 +1,299 @@
-#include <windows.h>
+// DEMO8_12_16b.CPP - Sparse universe scrolling demo
+// 16-bit version
+
+// INCLUDES ///////////////////////////////////////////////
+
+#define WIN32_LEAN_AND_MEAN  
+
+// you must #define INITGUID if not done elsewhere
+#define INITGUID
+#include <winsock2.h>
 #include"game.h"
-#include"map.h"
-CGame MainGame;
+#include "pch.h"
+#include "player.h"
 
-/* This is where all the input to the window goes to */
-LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
-	switch (Message) {
 
-		/* Upon destruction, tell the main thread to stop */
-	case WM_DESTROY: {
-		PostQuitMessage(0);
-		break;
-	}
+EXTERN_BOB_OBJECTS()
 
-				   /* All other messages (a lot of them) are processed using default procedures */
-	default:
-		return DefWindowProc(hwnd, Message, wParam, lParam);
-	}
-	return 0;
-}
+// defines for windows 
+#define WINDOW_CLASS_NAME "WINCLASS1"
 
-/* The 'main' function of Win32 GUI programs: this is where execution starts */
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-	WNDCLASSEX wc; /* A properties struct of our window */
-	HWND hwnd; /* A 'HANDLE', hence the H, or a pointer to our window */
-	MSG msg; /* A temporary location for all messages */
+// setup a 640x480 16-bit windowed mode example
+#define WINDOW_TITLE      "NICONICONI"
+#define WINDOW_WIDTH      800   // size of window
+#define WINDOW_HEIGHT     600
+#define WINDOWED_APP      1     // 0 not windowed, 1 windowed
 
-	/* zero out the struct and set the stuff we want to modify */
-	memset(&wc, 0, sizeof(wc));
-	wc.cbSize = sizeof(WNDCLASSEX);
-	wc.lpfnWndProc = WndProc; /* This is where we will send messages to */
-	wc.hInstance = hInstance;
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+#define BITMAP_ID            0x4D42 // universal id for a bitmap
+#define MAX_COLORS_PALETTE   256
 
-	/* White, COLOR_WINDOW is just a #define for a system color, try Ctrl+Clicking it */
-	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-	wc.lpszClassName = "WindowClass";
-	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION); /* Load a standard icon */
-	wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION); /* use the name "A" to use the project icon */
+// size of universe, could be anything
+#define MAX_UNIVERSE_X 6400
+#define MAX_UNIVERSE_Y 4800
 
-	if (!RegisterClassEx(&wc)) {
-		MessageBox(NULL, "Window Registration Failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
-		return 0;
-	}
+#define NUM_OBJECTS_UNIVERSE 256 // number of objects in the universe
 
-	hwnd = CreateWindowEx(WS_EX_CLIENTEDGE, "WindowClass", "Nico's confusing daily life", WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, /* x */
-		CW_USEDEFAULT, /* y */
-		640, /* width */
-		480, /* height */
-		NULL, NULL, hInstance, NULL);
+// used to flag type of object
+#define GENERATOR_OBJ   0
+#define BEACON_OBJ      1  
+#define ALIEN_OBJ       2  
 
-	if (hwnd == NULL) {
-		MessageBox(NULL, "Window Creation Failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
-		return 0;
-	}
 
-	/*
-		This is the heart of our program where all input is processed and
-		sent to WndProc. Note that GetMessage blocks code flow until it receives something, so
-		this loop will not produce unreasonably high CPU usage
-	*/
-	while (GetMessage(&msg, NULL, 0, 0) > 0) { /* If no error is received... */
-		TranslateMessage(&msg); /* Translate key codes to chars if present */
-		DispatchMessage(&msg); /* Send it to WndProc */
-	}
-	return msg.wParam;
-}
+
+// PROTOTYPES /////////////////////////////////////////////
+
+// game console
+int Game_Init(void* parms = NULL, int num_parms = 0);
+int Game_Shutdown(void* parms = NULL, int num_parms = 0);
+int Game_Main(void* parms = NULL, int num_parms = 0);
+
+// GLOBALS ////////////////////////////////////////////////
+// windows vars
+int       window_closed = 0;    // tracks if window is closed
+
+char buffer[80];                // used to print text
+
+// demo globals
+CPlayer player;
+CGame game;
+// PROTOTYPES //////////////////////////////////////////////
+
+LRESULT CALLBACK WindowProc(HWND hwnd,
+    UINT msg,
+    WPARAM wparam,
+    LPARAM lparam)
+{
+    // this is the main message handler of the system
+    PAINTSTRUCT		ps;		// used in WM_PAINT
+    HDC				hdc;	// handle to a device context
+    char buffer[80];        // used to print strings
+
+    // what is the message 
+    switch (msg)
+    {
+    case WM_CREATE:
+    {
+        // do initialization stuff here
+        // return success
+        return(0);
+    } break;
+
+    case WM_PAINT:
+    {
+        // simply validate the window 
+        hdc = BeginPaint(hwnd, &ps);
+
+        // end painting
+        EndPaint(hwnd, &ps);
+
+        // return success
+        return(0);
+    } break;
+
+    case WM_DESTROY:
+    {
+
+        // kill the application, this sends a WM_QUIT message 
+        PostQuitMessage(0);
+
+        // return success
+        return(0);
+    } break;
+
+    default:break;
+
+    } // end switch
+
+// process any messages that we didn't take care of 
+    return (DefWindowProc(hwnd, msg, wparam, lparam));
+
+} // end WinProc
+
+// WINMAIN ////////////////////////////////////////////////
+
+int WINAPI WinMain(HINSTANCE hinstance,
+    HINSTANCE hprevinstance,
+    LPSTR lpcmdline,
+    int ncmdshow)
+{
+
+    WNDCLASSEX winclass; // this will hold the class we create
+    HWND	   hwnd;	 // generic window handle
+    MSG		   msg;		 // generic message
+    HDC        hdc;      // graphics device context
+
+    // first fill in the window class stucture
+    winclass.cbSize = sizeof(WNDCLASSEX);
+    winclass.style = CS_DBLCLKS | CS_OWNDC |
+        CS_HREDRAW | CS_VREDRAW;
+    winclass.lpfnWndProc = WindowProc;
+    winclass.cbClsExtra = 0;
+    winclass.cbWndExtra = 0;
+    winclass.hInstance = hinstance;
+    winclass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    winclass.hCursor = LoadCursor(NULL, IDC_ARROW);
+    winclass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+    winclass.lpszMenuName = NULL;
+    winclass.lpszClassName = WINDOW_CLASS_NAME;
+    winclass.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+
+    // save hinstance in global
+    main_instance = hinstance;
+
+    // register the window class
+    if (!RegisterClassEx(&winclass))
+        return(0);
+
+    /// create the window
+    if (!(hwnd = CreateWindowEx(NULL,                  // extended style
+        WINDOW_CLASS_NAME,     // class
+        WINDOW_TITLE, // title
+        (WINDOWED_APP ? (WS_OVERLAPPED | WS_SYSMENU | WS_CAPTION) : (WS_POPUP | WS_VISIBLE)),
+        0, 0,	  // initial x,y
+        WINDOW_WIDTH, WINDOW_HEIGHT,  // initial width, height
+        NULL,	  // handle to parent 
+        NULL,	  // handle to menu
+        hinstance,// instance of this application
+        NULL)))	// extra creation parms
+        return(0);
+
+    // save main window handle
+    main_window_handle = hwnd;
+
+    if (WINDOWED_APP)
+    {
+        // now resize the window, so the client area is the actual size requested
+        // since there may be borders and controls if this is going to be a windowed app
+        // if the app is not windowed then it won't matter
+        RECT window_rect = { 0,0,WINDOW_WIDTH - 1,WINDOW_HEIGHT - 1 };
+
+        // make the call to adjust window_rect
+        AdjustWindowRectEx(&window_rect,
+            GetWindowStyle(main_window_handle),
+            GetMenu(main_window_handle) != NULL,
+            GetWindowExStyle(main_window_handle));
+
+        // save the global client offsets, they are needed in DDraw_Flip()
+        window_client_x0 = -window_rect.left;
+        window_client_y0 = -window_rect.top;
+
+        // now resize the window with a call to MoveWindow()
+        MoveWindow(main_window_handle,
+            0, // x position
+            0, // y position
+            window_rect.right - window_rect.left, // width
+            window_rect.bottom - window_rect.top, // height
+            TRUE);
+
+        // show the window, so there's no garbage on first render
+        ShowWindow(main_window_handle, SW_SHOW);
+    } // end if windowed
+
+
+    // initialize game here
+    Game_Init();
+
+    // enter main event loop
+    while (TRUE)
+    {
+        // test if there is a message in queue, if so get it
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+        {
+            // test if this is a quit
+            if (msg.message == WM_QUIT)
+                break;
+
+            // translate any accelerator keys
+            TranslateMessage(&msg);
+
+            // send the message to the window proc
+            DispatchMessage(&msg);
+        } // end if
+
+        // main game processing goes here
+        Game_Main();
+
+    } // end while
+
+// closedown game here
+    Game_Shutdown();
+
+    // return to Windows like this
+    return(msg.wParam);
+
+} // end WinMain
+
+// GAME PROGRAMMING CONSOLE FUNCTIONS ////////////////
+
+int Game_Init(void* parms, int num_parms)
+{
+    // this function is where you do all the initialization 
+
+    // start up DirectDraw (replace the parms as you desire)
+    DDraw_Init(WINDOW_WIDTH, WINDOW_HEIGHT);
+    game.GameInit();/*
+    player.Create(22);
+
+    BITMAP_FILE Tcurmap;
+    int Tlist[10];
+    player.LoadSkinFrame(0, 12, 6);
+    player.Slide();
+    player.m_Player.Set_Vel(10, 0);
+    // return success*/
+    return(1);
+
+} // end Game_Init
+
+///////////////////////////////////////////////////////////
+
+int Game_Shutdown(void* parms, int num_parms)
+{
+    // this function is where you shutdown your game and
+    // release all resources that you allocated
+
+    // kill objects
+    //generator.Destroy();
+
+    // shutdonw directdraw
+    DDraw_Shutdown();
+
+    // return success
+    return(1);
+} // end Game_Shutdown
+
+///////////////////////////////////////////////////////////
+
+int Game_Main(void* parms, int num_parms)
+{
+    // this is the workhorse of your game it will be called
+    // continuously in real-time this is like main() in C
+    // all the calls for you game go here!
+
+    /*int index, index_x, index_y;  // looping vars
+    int screen_x, screen_y;       // screen coords
+    int width, height, type;      // used to extract bob info
+    int x0, y0, x1, y1; // used to compute the upper left and lower right corners of each object
+    int visible = 0; // number of visible objects
+
+    BOB_PTR object_ptr = &generator; // the object that is going to be rendered
+
+    // check of user is trying to exit
+    if (KEY_DOWN(VK_ESCAPE) || KEY_DOWN(VK_SPACE))
+        PostMessage(main_window_handle, WM_DESTROY, 0, 0);*/
+    
+    //Clock t_clock;
+    //t_clock.Start_Clock();
+
+    //DDraw_Fill_Surface(lpddsback, 0);
+    game.GameMain();
+    //player.MoveNext();
+    //player.Draw();
+
+    //DDraw_Flip();
+
+   // t_clock.Wait_Clock(30);
+    return(1);
+
+} // end Game_Main
+
+//////////////////////////////////////////////////////////

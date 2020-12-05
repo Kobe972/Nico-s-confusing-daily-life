@@ -24,13 +24,16 @@
     <ClCompile Include="map.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="button.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="game.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="GameEntry.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="BobClass.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,9 +44,6 @@
     <ClInclude Include="map.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="button.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="game.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -51,6 +51,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="pch.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="BobClass.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -16,16 +16,8 @@
 #include <sys/timeb.h>
 #include <time.h>
 
-#include <ddraw.h>    // directX includes
-#pragma comment(lib, "ddraw.lib")
-#pragma comment(lib, "dxguid.lib")
-
-// these read the keyboard asynchronously
-#define KEY_DOWN(vk_code) ((GetAsyncKeyState(vk_code) & 0x8000) ? 1 : 0)
-#define KEY_UP(vk_code)   ((GetAsyncKeyState(vk_code) & 0x8000) ? 0 : 1)
-
-#define SCREEN_WIDTH        640  // size of screen
-#define SCREEN_HEIGHT       480
+#include "pch.h"
+EXTERN_BOB_OBJECTS()
 
 #define BITMAP_ID            0x4D42 // universal id for a bitmap
 #define BITMAP_STATE_DEAD    0
@@ -53,18 +45,14 @@
 #define BOB_ATTR_LOADED         128 // the bob has been loaded
 #define BOB_ATTR_CLONE          256 // the bob is a clone
 
-#define DDRAW_INIT_STRUCT(ddstruct) { memset(&ddstruct,0,sizeof(ddstruct)); ddstruct.dwSize=sizeof(ddstruct); }
 
-// bit manipulation macros
-#define SET_BIT(word,bit_flag)   ((word)=((word) | (bit_flag)))
-#define RESET_BIT(word,bit_flag) ((word)=((word) & (~bit_flag)))
-
-typedef unsigned short USHORT;
-typedef unsigned short WORD;
-typedef unsigned char  UCHAR;
-typedef unsigned char  BYTE;
-typedef unsigned int   QUAD;
-typedef unsigned int   UINT;
+UINT RGBBIT(UCHAR a, UCHAR r, UCHAR g, UCHAR b);
+int DDraw_Init(int width, int height);
+int DDraw_Shutdown(void);
+LPDIRECTDRAWCLIPPER DDraw_Attach_Clipper(LPDIRECTDRAWSURFACE7 lpdds, int num_rects, LPRECT clip_list);
+LPDIRECTDRAWSURFACE7 DDraw_Create_Surface(int width, int height, int mem_flags = 0, USHORT color_key_value = 0);
+int DDraw_Fill_Surface(LPDIRECTDRAWSURFACE7 lpdds, USHORT color, RECT* client = NULL);
+int DDraw_Flip(void);
 
 typedef class BITMAP_FILE_TAG
 {
@@ -72,11 +60,12 @@ private:
     BITMAPFILEHEADER bitmapfileheader;  // this contains the bitmapfile header
     BITMAPINFOHEADER bitmapinfoheader;  // this is all the info including the palette
     UINT* buffer;           // this is a pointer to the data
+    int Flip_Bitmap(UINT* image, int width, int height);
 public:
     friend class BOB_TYP;
+    friend class CGame;
     int Load_File(const char* filename);
     int Unload_File();
-    int Flip_Bitmap(UINT* image, int width, int height);
 } BITMAP_FILE, * BITMAP_FILE_PTR;
 
 typedef class BOB_TYP
@@ -88,8 +77,6 @@ private:
     float x, y;            // position bitmap will be displayed at
     float xv, yv;          // velocity of object
     int width, height;  // the width and height of the bob
-    int width_fill;     // internal, used to force 8*x wide surfaces
-    int bpp;            // bits per pixel
     int counter_1;      // general counters
     int counter_2;
     int max_count_1;    // general threshold values;
@@ -103,27 +90,30 @@ private:
     int anim_index;     // animation element index
     int anim_count_max; // number of cycles before animation
     int* animations[MAX_BOB_ANIMATIONS]; // animation sequences
+    int next_animation[MAX_BOB_ANIMATIONS];
 
+    UINT color_key_value; // default color key
     LPDIRECTDRAWSURFACE7 images[MAX_BOB_FRAMES]; // the bitmap images DD surfaces
 public:
-    void Set_Anim_Speed(int speed) {anim_count_max = speed;}
-    void Set_Animation(int _anim_index) { curr_animation = anim_index; anim_index = 0;}
-    void Set_Vel(int _xv, int _yv) {xv = _xv; yv = _yv;}
+    friend class CPlayer;
+    void Set_Anim_Speed(int speed) { anim_count_max = speed; }
+    void Set_Animation(int _anim_index) { curr_animation = _anim_index; anim_index = 0; }
+    void Set_Vel(int _xv, int _yv) { xv = _xv; yv = _yv; }
     void Set_Pos(int _x, int _y) { x = _x; y = _y; }
-    void Hide() {RESET_BIT(attr, BOB_ATTR_VISIBLE);}
+    void Hide() { RESET_BIT(attr, BOB_ATTR_VISIBLE); }
     void Show() { SET_BIT(attr, BOB_ATTR_VISIBLE); }
     int Create(int x, int y, int width, int height, int num_frames, int attr,
-        int mem_flags = 0);
+        int mem_flags = 0, UINT color_key_value = RGBBIT(0, 255, 255, 255));
     int Destroy();
     int Draw(LPDIRECTDRAWSURFACE7 dest);
     int Draw_Scaled(int swidth, int sheight, LPDIRECTDRAWSURFACE7 dest);
     int Load_Frame(BITMAP_FILE_PTR bitmap, int frame, int cx, int cy, int mode);
     int Animate();
     int Move();
-    int Load_Animation(int anim_index, int num_frames, int* sequence);
-    friend int Clone(BOB_TYP *source, BOB_TYP *dest);
-    friend int Collision(BOB_TYP *bob1, BOB_TYP *bob2);
-} BOB, *BOB_PTR;
+    int Load_Animation(int anim_index, int num_frames, int* sequence, int next_animation);
+    friend int Clone(BOB_TYP* source, BOB_TYP* dest);
+    friend int Collision(BOB_TYP* bob1, BOB_TYP* bob2);
+} BOB, * BOB_PTR;
 
 class Clock {
 private:
@@ -132,10 +122,3 @@ public:
     void Start_Clock() { m_dwStartTime = GetTickCount(); }
     void Wait_Clock(DWORD dwcount) { while (GetTickCount() - m_dwStartTime <= dwcount); }
 };
-UINT RGBBIT(UCHAR a, UCHAR r, UCHAR g, UCHAR b);
-int DDraw_Init(int width, int height);
-int DDraw_Shutdown(void);
-LPDIRECTDRAWCLIPPER DDraw_Attach_Clipper(LPDIRECTDRAWSURFACE7 lpdds, int num_rects, LPRECT clip_list);
-LPDIRECTDRAWSURFACE7 DDraw_Create_Surface(int width, int height, int mem_flags = 0, USHORT color_key_value = 0);
-int DDraw_Fill_Surface(LPDIRECTDRAWSURFACE7 lpdds, USHORT color, RECT* client = NULL);
-int DDraw_Flip(void);
