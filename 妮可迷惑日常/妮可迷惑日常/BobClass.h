@@ -45,6 +45,8 @@ EXTERN_BOB_OBJECTS()
 #define BOB_ATTR_LOADED         128 // the bob has been loaded
 #define BOB_ATTR_CLONE          256 // the bob is a clone
 
+#define WINDOW_WIDTH      800   // size of window
+#define WINDOW_HEIGHT     600
 
 UINT RGBBIT(UCHAR a, UCHAR r, UCHAR g, UCHAR b);
 int DDraw_Init(int width, int height);
@@ -53,21 +55,20 @@ LPDIRECTDRAWCLIPPER DDraw_Attach_Clipper(LPDIRECTDRAWSURFACE7 lpdds, int num_rec
 LPDIRECTDRAWSURFACE7 DDraw_Create_Surface(int width, int height, int mem_flags = 0, USHORT color_key_value = 0);
 int DDraw_Fill_Surface(LPDIRECTDRAWSURFACE7 lpdds, USHORT color, RECT* client = NULL);
 int DDraw_Flip(void);
+void Change_To_Client_Rect(LPRECT rect);
+
 
 typedef class BITMAP_FILE_TAG
 {
-private:
+    public:
     BITMAPFILEHEADER bitmapfileheader;  // this contains the bitmapfile header
     BITMAPINFOHEADER bitmapinfoheader;  // this is all the info including the palette
     UINT* buffer;           // this is a pointer to the data
     int Flip_Bitmap(UINT* image, int width, int height);
-public:
-    friend class BOB_TYP;
-    friend class CGame;
     int Load_File(const char* filename);
     int Unload_File();
 } BITMAP_FILE, * BITMAP_FILE_PTR;
-
+void DDraw_Draw_Bitmap(BITMAP_FILE_PTR bitmap, LPDIRECTDRAWSURFACE7 lpdds,POINT coor);
 typedef class BOB_TYP
 {
 private:

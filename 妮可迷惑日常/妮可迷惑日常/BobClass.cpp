@@ -74,7 +74,6 @@ int DDraw_Init(int width, int height)
     // must be windowed, so create a double buffer that will be blitted
     // rather than flipped as in full screen mode
     lpddsback = DDraw_Create_Surface(width, height); // int mem_flags, USHORT color_key_flag);
-
     // clear out both primary and secondary surfaces
     DDraw_Fill_Surface(lpddsback, 0);
 
@@ -117,7 +116,7 @@ LPDIRECTDRAWSURFACE7 DDraw_Create_Surface(int width,
     // set to access caps, width, and height
     memset(&ddsd, 0, sizeof(ddsd));
     ddsd.dwSize = sizeof(ddsd);
-    ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;
+    ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT|DDSD_CKSRCBLT;
 
     // set dimensions of the new bitmap surface
     ddsd.dwWidth = width;
@@ -126,6 +125,9 @@ LPDIRECTDRAWSURFACE7 DDraw_Create_Surface(int width,
     // set surface to offscreen plain
     ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | mem_flags;
 
+    //Set the color key
+    ddsd.ddckCKSrcBlt.dwColorSpaceHighValue = color_key_value;
+    ddsd.ddckCKSrcBlt.dwColorSpaceLowValue = color_key_value;
     // create the surface
     if (FAILED(lpdd->CreateSurface(&ddsd, &lpdds, NULL)))
         return(NULL);
@@ -813,3 +815,53 @@ int DDraw_Flip(void)
     return(1);
 
 } // end DDraw_Flip
+void DDraw_Draw_Bitmap(BITMAP_FILE_PTR bitmap, LPDIRECTDRAWSURFACE7 lpdds,POINT coor)
+{
+    DDSURFACEDESC2 ddsd;  //  direct draw surface description 
+
+    UINT* source_ptr,   // working pointers
+        * dest_ptr;
+    // extract bitmap data
+    source_ptr = bitmap->buffer;
+    // get the addr to destination surface memory
+
+    // set size of the structure
+    ddsd.dwSize = sizeof(ddsd);
+    // lock the display surface
+    if (FAILED((lpdds)->Lock(NULL,
+        &ddsd,
+        DDLOCK_WAIT | DDLOCK_SURFACEMEMORYPTR,
+        NULL))) return;
+
+    // assign a pointer to the memory surface for manipulation
+    dest_ptr = (UINT*)ddsd.lpSurface;
+    // iterate thru each scanline and copy bitmap
+    int lpitch = (int)(ddsd.lPitch >> 2);
+    dest_ptr += coor.x;
+    dest_ptr += lpitch * coor.y;
+    for (int index_y = 0; index_y < bitmap->bitmapinfoheader.biHeight; index_y++)
+    {
+        memcpy(dest_ptr, source_ptr, bitmap->bitmapinfoheader.biWidth * sizeof(UINT)); // copy next line of data to destination
+
+        // advance pointers
+        dest_ptr += lpitch;
+        source_ptr += bitmap->bitmapinfoheader.biWidth;
+    } // end for index_y
+
+    (lpdds)->Unlock(NULL); // unlock the surface 
+    return;
+}
+void Change_To_Client_Rect(LPRECT rect)
+{
+    RECT rect2;
+    GetWindowRect(main_window_handle, &rect2);
+    rect2.left += window_client_x0;
+    rect2.top += window_client_y0;
+    rect2.right = rect2.left + screen_width;
+    rect2.bottom = rect2.top + screen_height;
+    rect->left += rect2.left;
+    rect->right += rect2.left;
+    rect->top += rect2.top;
+    rect->bottom += rect2.top;
+    return;
+}

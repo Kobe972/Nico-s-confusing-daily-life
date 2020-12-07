@@ -4,10 +4,19 @@
 #include"GUI.h"
 #include"player.h"
 #include <Windows.h>
+//#include"T3DLIB2.h"
 //then define game states
 #define MAINMENU 0
+#define SELECT_SKIN 1
+#define SELECT_HARDSHIP 2
+#define SETTINGS 3
+#define HELP 4
+#define LOG 5
+#define REGISTRY 6 //the ID of the button is IREGISTRY,be aware of it
+#define SEE_RANKS 7
 #pragma warning
 EXTERN_BOB_OBJECTS()
+extern CButton button[20];
 class CGame
 {
 public:
@@ -39,15 +48,17 @@ private:
 public:
 
 	void ConnectToServ();//connect to server
-	void OnMouseMove(UINT nFlags, CPoint point);
-	void LeftButtonUp(UINT nFlags, CPoint point);
-	void ProcessCurMsg();
-	void ProcessKeyMsg();
+	void GetCurMsg();
 	void ProcessButtonMsg();//处理按钮事件
+	void ProcessKeyMsg();
 	void ShowMenu();
 	void EnterFrame();//绘制游戏下一帧
 	void SinglePlayer();//开始
 	void MultiPlayer();
+	void Help();
+	void Settings();
+	void Login();//登录
+	void Reg();//注册账号
 	void Prelude(); //单人游戏开始前的任务介绍
 	void Appendix();//单人游戏通关后的任务执行（子游戏）
 	void WaitOthers();//双人游戏开始前等待其他玩家加入
@@ -55,8 +66,6 @@ public:
 	void WaitToEnd();//双人游戏等待结束以及结束后的数据处理工作
 	void SelectSkin();
 	void SelectHardship();
-	void Login();//登录
-	void Reg();//注册账号
 	void RecvSerMessage();//接收服务器发来的信号
 	void ProcessSerMessage(char* Msg);//处理信号
 	void SendMsg(char* Msg);//给服务器发送信号

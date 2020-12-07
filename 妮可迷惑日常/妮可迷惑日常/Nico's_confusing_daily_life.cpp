@@ -188,25 +188,17 @@ int WINAPI WinMain(HINSTANCE hinstance,
         // show the window, so there's no garbage on first render
         ShowWindow(main_window_handle, SW_SHOW);
     } // end if windowed
-
-
     // initialize game here
     Game_Init();
 
     // enter main event loop
     while (TRUE)
     {
-        // test if there is a message in queue, if so get it
         if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
-            // test if this is a quit
             if (msg.message == WM_QUIT)
                 break;
-
-            // translate any accelerator keys
             TranslateMessage(&msg);
-
-            // send the message to the window proc
             DispatchMessage(&msg);
         } // end if
 
@@ -231,15 +223,7 @@ int Game_Init(void* parms, int num_parms)
 
     // start up DirectDraw (replace the parms as you desire)
     DDraw_Init(WINDOW_WIDTH, WINDOW_HEIGHT);
-    game.GameInit();/*
-    player.Create(22);
-
-    BITMAP_FILE Tcurmap;
-    int Tlist[10];
-    player.LoadSkinFrame(0, 12, 6);
-    player.Slide();
-    player.m_Player.Set_Vel(10, 0);
-    // return success*/
+    game.GameInit();
     return(1);
 
 } // end Game_Init
@@ -248,18 +232,11 @@ int Game_Init(void* parms, int num_parms)
 
 int Game_Shutdown(void* parms, int num_parms)
 {
-    // this function is where you shutdown your game and
-    // release all resources that you allocated
-
-    // kill objects
-    //generator.Destroy();
-
-    // shutdonw directdraw
+    // shutdown directdraw
     DDraw_Shutdown();
 
-    // return success
     return(1);
-} // end Game_Shutdown
+} 
 
 ///////////////////////////////////////////////////////////
 
@@ -268,32 +245,10 @@ int Game_Main(void* parms, int num_parms)
     // this is the workhorse of your game it will be called
     // continuously in real-time this is like main() in C
     // all the calls for you game go here!
-
-    /*int index, index_x, index_y;  // looping vars
-    int screen_x, screen_y;       // screen coords
-    int width, height, type;      // used to extract bob info
-    int x0, y0, x1, y1; // used to compute the upper left and lower right corners of each object
-    int visible = 0; // number of visible objects
-
-    BOB_PTR object_ptr = &generator; // the object that is going to be rendered
-
-    // check of user is trying to exit
-    if (KEY_DOWN(VK_ESCAPE) || KEY_DOWN(VK_SPACE))
-        PostMessage(main_window_handle, WM_DESTROY, 0, 0);*/
-    
-    //Clock t_clock;
-    //t_clock.Start_Clock();
-
-    //DDraw_Fill_Surface(lpddsback, 0);
     game.GameMain();
-    //player.MoveNext();
-    //player.Draw();
-
-    //DDraw_Flip();
-
-   // t_clock.Wait_Clock(30);
+    DDraw_Flip();
     return(1);
 
-} // end Game_Main
+} 
 
 //////////////////////////////////////////////////////////
