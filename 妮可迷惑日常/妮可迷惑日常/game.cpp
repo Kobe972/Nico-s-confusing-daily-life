@@ -90,8 +90,8 @@ void CGame::ProcessButtonMsg()
             {
                 switch (i)
                 {
-                case ISINGLE_MODE:m_eGameState = SELECT_SKIN; break;
-                case IMULTIMODE:m_eGameState = SELECT_SKIN; break;
+                case ISINGLE_MODE:m_IsSingle = true; m_eGameState = SELECT_SKIN; break;
+                case IMULTIMODE:m_IsSingle = false; m_eGameState = SELECT_SKIN; break;
                 case ISETTINGS:m_eGameState = SETTINGS; break;
                 case IHELP:m_eGameState = HELP; break;
                 case ILOG:m_eGameState = LOG; break;

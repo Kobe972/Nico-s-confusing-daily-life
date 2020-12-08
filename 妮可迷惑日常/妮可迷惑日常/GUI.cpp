@@ -16,8 +16,15 @@ void CButton::init_by_ID(int ID)
 {
 	m_ID = ID;
 	POINT position_in_offscreen;
+	DDCOLORKEY color_key;
+	color_key.dwColorSpaceLowValue = RGBBIT(0, 0, 0, 0);
+	color_key.dwColorSpaceHighValue = RGBBIT(0, 0, 0, 0);
 	for(int i=0;i<3;i++)m_Style[i]=(char*)malloc(30 * sizeof(char));
-	for(int i=0;i<3;i++)m_ButtonSur[i] = DDraw_Create_Surface(1000, 100);
+	for (int i = 0; i < 3; i++)
+	{
+		m_ButtonSur[i] = DDraw_Create_Surface(1000, 100);
+		m_ButtonSur[i]->SetColorKey(DDCKEY_SRCBLT, &color_key);
+	}
 	switch (m_ID)
 	{
 	case ISINGLE_MODE:
