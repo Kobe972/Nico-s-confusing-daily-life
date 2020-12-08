@@ -138,7 +138,7 @@ void CButton::init_by_ID(int ID)
 		break;
 	}
 }
-void CButton::Draw()
+void CButton::Draw()//在后备缓冲表面绘图
 {
 	RECT coor;
 	coor.left = (m_state%3)*m_Width; 

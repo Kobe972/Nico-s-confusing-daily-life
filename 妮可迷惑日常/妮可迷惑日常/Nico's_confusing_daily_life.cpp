@@ -232,9 +232,6 @@ int Game_Init(void* parms, int num_parms)
 
 int Game_Shutdown(void* parms, int num_parms)
 {
-    // shutdown directdraw
-    DDraw_Shutdown();
-
     return(1);
 } 
 

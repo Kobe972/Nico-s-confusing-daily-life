@@ -39,4 +39,6 @@ extern LPDIRECTINPUTDEVICE8 lpdimouse;  // dinput mouse
 // these contain the target records for all di input packets
 extern UCHAR keyboard_state[256]; // contains keyboard state table
 extern DIMOUSESTATE mouse_state;  // contains state of mouse
+extern POINT pos;
 
+#define MOUSE_LEFT_BUTTON 0

@@ -1,5 +1,4 @@
 #pragma once
-#include "pch.h"
 #include "GameEntry.h"
 #include "BobClass.h"
 //define of the information about player

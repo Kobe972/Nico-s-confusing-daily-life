@@ -46,14 +46,8 @@ LPDIRECTINPUTDEVICE8 lpdimouse = NULL;    // dinput mouse
 // these contain the target records for all di input packets
 UCHAR keyboard_state[256]; // contains keyboard state table
 DIMOUSESTATE mouse_state;  // contains state of mouse
-#define EXTERN_INPUT_DATA()\
-{\
-extern LPDIRECTINPUT8       lpdi;\
-extern LPDIRECTINPUTDEVICE8 lpdikey;\
-extern LPDIRECTINPUTDEVICE8 lpdimouse;\
-extern UCHAR keyboard_state[256]; \
-extern DIMOUSESTATE mouse_state; \
-}
+POINT pos;
+
 // FUNCTIONS //////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////

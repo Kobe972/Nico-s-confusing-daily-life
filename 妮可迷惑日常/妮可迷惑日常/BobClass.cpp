@@ -803,15 +803,13 @@ int DDraw_Flip(void)
 
     dest_rect.right = dest_rect.left + screen_width;
     dest_rect.bottom = dest_rect.top + screen_height;
-
-    // clip the screen coords 
-
-
-
+// clip the screen coords 
     // blit the entire back surface to the primary
-    if (FAILED(lpddsprimary->Blt(&dest_rect, lpddsback, NULL, DDBLT_WAIT, NULL)))
-        return(0);
-
+    if (FAILED(lpddsprimary->Blt(&dest_rect, lpddsback, NULL, DDBLT_WAIT, NULL)))   return(0);
+        DDBLTFX ddbltfx;
+    DDRAW_INIT_STRUCT(ddbltfx);
+    ddbltfx.dwFillColor = 0;
+    lpddsback->Blt(NULL,NULL,NULL,DDBLT_COLORFILL | DDBLT_WAIT,&ddbltfx); 
     // return success
     return(1);
 

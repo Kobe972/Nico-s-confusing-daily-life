@@ -1,8 +1,3 @@
-﻿  Nico's_confusing_daily_life.cpp
-C:\Users\生活的旋律\Desktop\Main\Nico-s-confusing-daily-life-main\妮可迷惑日常\妮可迷惑日常\GUI.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-C:\Users\生活的旋律\Desktop\Main\Nico-s-confusing-daily-life-main\妮可迷惑日常\妮可迷惑日常\game.h(17,17): warning C4081: 应输入“(”；找到“newline”
-  game.cpp
-C:\Users\生活的旋律\Desktop\Main\Nico-s-confusing-daily-life-main\妮可迷惑日常\妮可迷惑日常\GUI.h(1,1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-C:\Users\生活的旋律\Desktop\Main\Nico-s-confusing-daily-life-main\妮可迷惑日常\妮可迷惑日常\game.h(17,17): warning C4081: 应输入“(”；找到“newline”
-  正在生成代码...
-  妮可迷惑日常.vcxproj -> C:\Users\生活的旋律\Desktop\Main\Nico-s-confusing-daily-life-main\妮可迷惑日常\x64\Debug\妮可迷惑日常.exe
+﻿  BobClass.cpp
+  C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0\um\dinput.h: DIRECTINPUT_VERSION undefined. Defaulting to version 0x0800
+  妮可迷惑日常.vcxproj -> E:\编程\C++\妮可迷惑日常\x64\Debug\妮可迷惑日常.exe

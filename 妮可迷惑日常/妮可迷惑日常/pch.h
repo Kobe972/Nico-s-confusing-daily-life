@@ -34,52 +34,10 @@
 
 
 #include <ddraw.h>    // directX includes
+#include<dinput.h>
+#include"T3DLIB2.h"
 #pragma comment(lib, "ddraw.lib")
 #pragma comment(lib, "dxguid.lib")
-
-/*
-#define EXTERN_BOB_OBJECTS()
-LPDIRECTDRAW7         lpdd = NULL;   // dd object																	\
-LPDIRECTDRAWSURFACE7  lpddsprimary = NULL;   // dd primary surface
-LPDIRECTDRAWSURFACE7  lpddsback = NULL;   // dd back surface
-LPDIRECTDRAWSURFACE7  lpddsoffscreen = NULL;   // dd off screen surface
-LPDIRECTDRAWPALETTE   lpddpal = NULL;   // a pointer to the created dd palette
-LPDIRECTDRAWCLIPPER   lpddclipper = NULL;   // dd clipper
-PALETTEENTRY          palette[256];          // color palette
-PALETTEENTRY          save_palette[256];     // used to save palettes
-DDSURFACEDESC2        ddsd;                  // a direct draw surface description struct
-DDBLTFX               ddbltfx;               // used to fill
-DDSCAPS2              ddscaps; // a direct draw surface capabilities struct
-
-
-
-extern LPDIRECTDRAW7        lpdd;  // dd object
-extern LPDIRECTDRAWSURFACE7 lpddsprimary;  // dd primary surface
-extern LPDIRECTDRAWSURFACE7 lpddsback;  // dd back surface
-extern LPDIRECTDRAWCLIPPER  lpddclipper;   // dd clipper for back surface
-extern LPDIRECTDRAWCLIPPER  lpddclipperwin; // dd clipper for window
-
-extern DDSURFACEDESC2       ddsd;                 // a direct draw surface description struct
-extern DDBLTFX              ddbltfx;              // used to fill
-extern DDSCAPS2             ddscaps;              // a direct draw surface capabilities struct
-extern HRESULT              ddrval;               // result back from dd calls
-extern UINT* primary_buffer; // primary video buffer
-extern UINT* back_buffer; // secondary back buffer
-
-extern HWND main_window_handle; // save the window handle
-extern HINSTANCE main_instance; // save the instance
-
-extern int screen_width,            // width of screen
-screen_height;           // height of screen
-
-extern int min_clip_x,                             // clipping rectangle
-max_clip_x,
-min_clip_y,
-max_clip_y;
-
-extern int window_client_x0;   // used to track the starting (x,y) client area for
-extern int window_client_y0;   // for windowed mode directdraw operations
-*/
 
 typedef unsigned short USHORT;
 typedef unsigned short WORD;
@@ -126,6 +84,13 @@ int min_clip_x,  max_clip_x, min_clip_y, max_clip_y;  							\
 int window_client_x0;   														\
 int window_client_y0;   														\
 
+#define EXTERN_INPUT_DATA()\
+extern LPDIRECTINPUT8       lpdi;\
+extern LPDIRECTINPUTDEVICE8 lpdikey;\
+extern LPDIRECTINPUTDEVICE8 lpdimouse;\
+extern UCHAR keyboard_state[256]; \
+extern DIMOUSESTATE mouse_state; \
+extern POINT pos;\
 // these read the keyboard asynchronously
 #define KEY_DOWN(vk_code) ((GetAsyncKeyState(vk_code) & 0x8000) ? 1 : 0)
 #define KEY_UP(vk_code)   ((GetAsyncKeyState(vk_code) & 0x8000) ? 0 : 1)

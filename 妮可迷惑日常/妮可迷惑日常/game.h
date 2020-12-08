@@ -1,21 +1,21 @@
 #pragma once
-#include<ddraw.h>
 #include"map.h"
 #include"GUI.h"
 #include"player.h"
 #include <Windows.h>
-//#include"T3DLIB2.h"
 //then define game states
 #define MAINMENU (EGameState::eGameStateMainMenu)
 #define SELECT_SKIN (EGameState::eGameStateSelectSkin)
 #define SELECT_HARDNESS (EGameState::eGameStateSelectHardness)
 #define SETTINGS (EGameState::eGameStateSettings)
-#define HELP (EGameState::eGameStateSettings)
+#define HELP (EGameState::eGameStateHelp)
 #define LOG (EGameState::eGameStateLogin)
 #define REGISTRY (EGameState::eGameStateRegister) //the ID of the button is IREGISTRY,be aware of it
 #define SEE_RANKS (EGameState::eGameStateShowRank)
 #pragma warning
 EXTERN_BOB_OBJECTS()
+EXTERN_INPUT_DATA()
+
 extern CButton button[20];
 class CGame
 {
@@ -24,7 +24,7 @@ public:
 	void GameMain();
 	
 	
-	~CGame() {};
+	~CGame();
 
 
 private:
@@ -46,10 +46,10 @@ private:
 
 public:
 	enum EGameState {
-		eGameStateMainMenu = 0, eGameStateSelectSkin, eGameStateSelectHardness,
-		eGameStatePrelude, eGameStateSinglePlayer, eGameStateSingleFailure, eGameStateSingleSuccess,
-		eGameStateHelp, eGameStateSettings, eGameStateWaitOthers, eGameStateMultiPlayer,
-		eGameStateWaitToEnd, eGameStateShowRank, eGameStateLogin, eGameStateRegister,
+		eGameStateMainMenu = 0, eGameStateSelectSkin, eGameStateSelectHardness,eGameStateSettings,eGameStateHelp,  
+		eGameStateLogin,  eGameStateRegister,eGameStateShowRank,eGameStatePrelude, eGameStateSinglePlayer, eGameStateSingleFailure, eGameStateSingleSuccess,
+		eGameStateWaitOthers, eGameStateMultiPlayer,
+		eGameStateWaitToEnd, 
 		eGameStateCount
 	};
 	//GameState 望文生义
