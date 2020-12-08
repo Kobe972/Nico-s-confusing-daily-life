@@ -1,9 +1,9 @@
 #include"game.h"
 extern CButton button[20];
 //EXTERN_INPUT_DATA()
-inline void CGame::SetGameState(int GameState)
+inline void CGame::SetGameState(CGame::EGameState eGameStateCurrent)
 {
-	m_state = GameState;
+    m_eGameState = eGameStateCurrent;
 }
 
 inline void CGame::SetWindowHandle(HWND hwnd)
@@ -22,11 +22,11 @@ void CGame::GameMain()
 {
     GetCurMsg();
     ProcessButtonMsg();
-	switch (m_state)
+	switch (m_eGameState)
 	{
 	case MAINMENU:
      ShowMenu();
- break;
+    break;
 	default:
 		break;
 	}
@@ -49,7 +49,7 @@ void CGame::ShowMenu()
     UINT* source_ptr,   // working pointers
         * dest_ptr;
     BITMAP_FILE_PTR bitmap=new BITMAP_FILE;
-    bitmap->Load_File("background\\MainMenu.bmp");LPDIRECTDRAWSURFACE7 lpdds;
+    bitmap->Load_File(".\\background\\MainMenu.bmp");LPDIRECTDRAWSURFACE7 lpdds;
     DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
     bitmap->Unload_File();
     for (int i = ISINGLE_MODE; i <= IREGISTRY; i++) button[i].Draw();
