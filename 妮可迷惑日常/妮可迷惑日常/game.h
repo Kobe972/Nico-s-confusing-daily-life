@@ -6,14 +6,14 @@
 #include <Windows.h>
 //#include"T3DLIB2.h"
 //then define game states
-#define MAINMENU 0
-#define SELECT_SKIN 1
-#define SELECT_HARDSHIP 2
-#define SETTINGS 3
-#define HELP 4
-#define LOG 5
-#define REGISTRY 6 //the ID of the button is IREGISTRY,be aware of it
-#define SEE_RANKS 7
+#define MAINMENU (EGameState::eGameStateMainMenu)
+#define SELECT_SKIN (EGameState::eGameStateSelectSkin)
+#define SELECT_HARDNESS (EGameState::eGameStateSelectHardness)
+#define SETTINGS (EGameState::eGameStateSettings)
+#define HELP (EGameState::eGameStateSettings)
+#define LOG (EGameState::eGameStateLogin)
+#define REGISTRY (EGameState::eGameStateRegister) //the ID of the button is IREGISTRY,be aware of it
+#define SEE_RANKS (EGameState::eGameStateShowRank)
 #pragma warning
 EXTERN_BOB_OBJECTS()
 extern CButton button[20];
@@ -33,7 +33,6 @@ private:
 	int m_OpponentCnt;
 	int m_OpponentProceses; //from 1 to 100,indicates how much 
 	
-	int m_state;
 	CMap m_map;
 	int m_CurrentObstacles; //indicates the obstacle the player is going through
 	CButton m_button[100];
@@ -44,6 +43,19 @@ private:
 	bool m_loggedin;//whether logged in or not(1 indicates logged in,0 not)
 	int m_connected;
 	bool m_IsSingle;//if it is single player mode
+
+public:
+	enum EGameState {
+		eGameStateMainMenu = 0, eGameStateSelectSkin, eGameStateSelectHardness,
+		eGameStatePrelude, eGameStateSinglePlayer, eGameStateSingleFailure, eGameStateSingleSuccess,
+		eGameStateHelp, eGameStateSettings, eGameStateWaitOthers, eGameStateMultiPlayer,
+		eGameStateWaitToEnd, eGameStateShowRank, eGameStateLogin, eGameStateRegister,
+		eGameStateCount
+	};
+	//GameState 望文生义
+
+private:
+	EGameState m_eGameState{ CGame::EGameState::eGameStateMainMenu };
 
 public:
 
@@ -72,9 +84,8 @@ public:
 
 	//A set of functions that can set arguments.
 public:
-	inline void SetGameState(int GameState);
+	inline void SetGameState(EGameState eGameStateCurrent);
 	inline void SetWindowHandle(HWND hwnd);
-
 private:
 	HWND m_hWnd;
 
