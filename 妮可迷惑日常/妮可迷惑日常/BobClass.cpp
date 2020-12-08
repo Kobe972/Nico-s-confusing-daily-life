@@ -286,6 +286,7 @@ int BITMAP_FILE::Load_File(const char* filename)
     int Width = bitmapinfoheader.biWidth;
 
     buffer = (UINT*)malloc(Height * Width * sizeof(UINT));
+    if (buffer == nullptr) return 0;
     fread(buffer, sizeof(UINT), Height * Width, fp);
 
     fclose(fp);
