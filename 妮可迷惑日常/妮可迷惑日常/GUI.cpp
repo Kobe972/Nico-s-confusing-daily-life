@@ -9,6 +9,7 @@ CButton::~CButton()
 		{
 			m_ButtonSur[i]->Release();
 			m_ButtonSur[i] = NULL;
+			m_bitmap[i].Unload_File();
 		}
 	}
 }
@@ -16,14 +17,10 @@ void CButton::init_by_ID(int ID)
 {
 	m_ID = ID;
 	POINT position_in_offscreen;
-	DDCOLORKEY color_key;
-	color_key.dwColorSpaceLowValue = RGBBIT(0, 0, 0, 0);
-	color_key.dwColorSpaceHighValue = RGBBIT(0, 0, 0, 0);
 	for(int i=0;i<3;i++)m_Style[i]=(char*)malloc(30 * sizeof(char));
 	for (int i = 0; i < 3; i++)
-	{
+	{ 
 		m_ButtonSur[i] = DDraw_Create_Surface(1000, 100);
-		m_ButtonSur[i]->SetColorKey(DDCKEY_SRCBLT, &color_key);
 	}
 	switch (m_ID)
 	{
@@ -152,6 +149,26 @@ void CButton::Draw()//在后备缓冲表面绘图
 	coor.top = 0;
 	coor.right = coor.left + m_Width;
 	coor.bottom = coor.top + m_Height;
-	lpddsback->Blt(&boarder, m_ButtonSur[m_state % 3], &coor, DDBLT_WAIT, NULL);
+	lpddsback->Blt(&boarder, m_ButtonSur[m_state % 3], &coor, DDBLT_WAIT | DDBLT_KEYSRC, NULL);
+}
+
+void CButton::Check()
+{
+	if (m_clipped == false && m_state != BSTATEUP) m_state = BSTATENORMAL;
+	if (pos.x >= boarder.left && pos.x <=boarder.right && pos.y >= boarder.top && pos.y <= boarder.bottom)
+	{
+		if (m_clipped == false) m_state = BSTATEON;
+		else m_state = BSTATEUP;
+		if (mouse_state.rgbButtons[MOUSE_LEFT_BUTTON] & 0x80)
+		{
+			m_state = BSTATEDOWN;
+			m_clipped = true;
+		}
+		else m_clipped = false;
+	}
+	else
+	{
+		m_clipped = false;
+	}
 }
 

@@ -29,6 +29,7 @@ public:
 	bool m_clipped=false;//之前鼠标是否按下
 public:
 	void Draw();
+	void Check();//process its reaction toward mouse
 };
 class CINPUTBOX : CGameEntry
 {

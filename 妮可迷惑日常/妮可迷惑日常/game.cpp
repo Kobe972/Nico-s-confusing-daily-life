@@ -70,22 +70,7 @@ void CGame::ProcessButtonMsg()
     case MAINMENU:
         for (int i = ISINGLE_MODE; i <= IREGISTRY; i++)
         {
-            if (button[i].m_clipped == false&&button[i].m_state!=BSTATEUP) button[i].m_state = BSTATENORMAL;
-            if (pos.x >= button[i].boarder.left && pos.x <= button[i].boarder.right && pos.y >= button[i].boarder.top && pos.y <= button[i].boarder.bottom)
-            {
-                if (button[i].m_clipped == false) button[i].m_state = BSTATEON;
-                else button[i].m_state = BSTATEUP; 
-                if (mouse_state.rgbButtons[MOUSE_LEFT_BUTTON] & 0x80)
-                {
-                    button[i].m_state = BSTATEDOWN;
-                    button[i].m_clipped = true;
-                }
-                else button[i].m_clipped = false;
-            }
-            else
-            {
-                button[i].m_clipped = false;
-            }
+            button[i].Check();
             if (button[i].m_state == BSTATEUP)
             {
                 switch (i)

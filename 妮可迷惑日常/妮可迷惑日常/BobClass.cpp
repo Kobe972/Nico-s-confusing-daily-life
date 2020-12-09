@@ -128,10 +128,10 @@ LPDIRECTDRAWSURFACE7 DDraw_Create_Surface(int width,
     //Set the color key
     ddsd.ddckCKSrcBlt.dwColorSpaceHighValue = color_key_value;
     ddsd.ddckCKSrcBlt.dwColorSpaceLowValue = color_key_value;
+    POINT position_in_offscreen;
     // create the surface
     if (FAILED(lpdd->CreateSurface(&ddsd, &lpdds, NULL)))
         return(NULL);
-
     // return surface
     return(lpdds);
 } // end DDraw_Create_Surface
