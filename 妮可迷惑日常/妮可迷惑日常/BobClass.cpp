@@ -106,7 +106,8 @@ int DDraw_Init(int width, int height)
 LPDIRECTDRAWSURFACE7 DDraw_Create_Surface(int width,
     int height,
     int mem_flags,
-    USHORT color_key_value)
+    UINT color_key_low,
+    UINT color_key_high)
 {
     // this function creates an offscreen plain surface
 
@@ -116,7 +117,7 @@ LPDIRECTDRAWSURFACE7 DDraw_Create_Surface(int width,
     // set to access caps, width, and height
     memset(&ddsd, 0, sizeof(ddsd));
     ddsd.dwSize = sizeof(ddsd);
-    ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT|DDSD_CKSRCBLT;
+    ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_CKSRCBLT;
 
     // set dimensions of the new bitmap surface
     ddsd.dwWidth = width;
@@ -125,13 +126,12 @@ LPDIRECTDRAWSURFACE7 DDraw_Create_Surface(int width,
     // set surface to offscreen plain
     ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | mem_flags;
 
-    //Set the color key
-    ddsd.ddckCKSrcBlt.dwColorSpaceHighValue = color_key_value;
-    ddsd.ddckCKSrcBlt.dwColorSpaceLowValue = color_key_value;
-    POINT position_in_offscreen;
     // create the surface
     if (FAILED(lpdd->CreateSurface(&ddsd, &lpdds, NULL)))
         return(NULL);
+
+    DDraw_SetColorKey(lpdds, color_key_low, color_key_high);
+
     // return surface
     return(lpdds);
 } // end DDraw_Create_Surface
@@ -272,6 +272,17 @@ int DDraw_Shutdown()
 ///////////////////////////////////////////////////////////
 
 
+void DDraw_SetColorKey(LPDIRECTDRAWSURFACE7 lpdds, UINT color_key_low, UINT color_key_high)
+{
+    DDCOLORKEY color_key; // used to set color key
+    color_key.dwColorSpaceLowValue = color_key_low;
+    color_key.dwColorSpaceHighValue = color_key_high;
+
+    // now set the color key for source blitting
+    lpdds->SetColorKey(DDCKEY_SRCBLT, &color_key);
+}
+
+
 int BITMAP_FILE::Load_File(const char* filename)
 {
     FILE* fp;
@@ -290,7 +301,8 @@ int BITMAP_FILE::Load_File(const char* filename)
     fread(buffer, sizeof(UINT), Height * Width, fp);
 
     fclose(fp);
-   Flip_Bitmap(buffer, Width, Height);
+
+    Flip_Bitmap(buffer, Width, Height);
     // return success
     return(1);
 } // end Load_Bitmap_File
@@ -343,7 +355,8 @@ int BOB::Create(           // the bob to create
     int _num_frames,        // number of frames
     int _attr,              // attrs
     int mem_flags,         // memory flags in DD format
-    UINT _color_key_value // default color key
+    UINT _color_key_low, // default color key low
+    UINT _color_key_high // default color key high
 )
 
 {
@@ -410,12 +423,7 @@ int BOB::Create(           // the bob to create
         if (FAILED(lpdd->CreateSurface(&ddsd, images + index, NULL)))
             return(0);
 
-        DDCOLORKEY color_key; // used to set color key
-        color_key.dwColorSpaceLowValue = _color_key_value;
-        color_key.dwColorSpaceHighValue = _color_key_value;
-
-        // now set the color key for source blitting
-        images[index]->SetColorKey(DDCKEY_SRCBLT, &color_key);
+        DDraw_SetColorKey(images[index], _color_key_low, _color_key_high);
     } // end for index
 
 // return success
@@ -625,6 +633,39 @@ int BOB::Load_Frame( // bob to load with data
 
 ///////////////////////////////////////////////////////////
 
+UINT Gradual_Change(UINT A, UINT B, int alpha)
+{
+    int RA = A & 255;
+    int GA = (A >> 8) & 255;
+    int BA = (A >> 16) & 255;
+    int RB = B & 255;
+    int GB = (B >> 8) & 255;
+    int BB = (B >> 16) & 255;
+    int RC = (RB * alpha + RA * (255 - alpha)) / 255;
+    int GC = (GB * alpha + GA * (255 - alpha)) / 255;
+    int BC = (BB * alpha + BA * (255 - alpha)) / 255;
+    return RGBBIT(0, RC, GC, BC);
+}
+
+void BOB::Load_Gradual_Frame(BITMAP_FILE_PTR bitmap1, BITMAP_FILE_PTR bitmap2, int cx, int cy, int step)
+{
+    int Twidth = bitmap1->bitmapinfoheader.biWidth, Theight = bitmap2->bitmapinfoheader.biHeight;
+    BITMAP_FILE bitmap;
+    bitmap = *bitmap1;
+    bitmap.buffer = (UINT*)malloc(sizeof(UINT) * Twidth * Theight);
+    int alpha = 0, index = 0;
+    for (alpha = 0; alpha <= 255; alpha += step)
+    {
+        for (int i = 0; i < Twidth * Theight; ++i)
+            bitmap.buffer[i] = Gradual_Change(bitmap1->buffer[i], bitmap2->buffer[i], alpha);
+        Load_Frame(&bitmap, index++, cx, cy, BITMAP_EXTRACT_MODE_ABS);
+    }
+    if (alpha != 255)
+        Load_Frame(bitmap2, index++, cx, cy, BITMAP_EXTRACT_MODE_ABS);
+}
+
+///////////////////////////////////////////////////////////
+
 int BOB::Animate()
 {
     // this function animates a bob, basically it takes a look at
@@ -803,18 +844,14 @@ int DDraw_Flip(void)
 
     dest_rect.right = dest_rect.left + screen_width;
     dest_rect.bottom = dest_rect.top + screen_height;
-// clip the screen coords 
-    // blit the entire back surface to the primary
+    // clip the screen coords 
+        // blit the entire back surface to the primary
     if (FAILED(lpddsprimary->Blt(&dest_rect, lpddsback, NULL, DDBLT_WAIT, NULL)))   return(0);
-        DDBLTFX ddbltfx;
-    DDRAW_INIT_STRUCT(ddbltfx);
-    ddbltfx.dwFillColor = 0;
-    lpddsback->Blt(NULL,NULL,NULL,DDBLT_COLORFILL | DDBLT_WAIT,&ddbltfx); 
     // return success
     return(1);
 
 } // end DDraw_Flip
-void DDraw_Draw_Bitmap(BITMAP_FILE_PTR bitmap, LPDIRECTDRAWSURFACE7 lpdds,POINT coor)
+void DDraw_Draw_Bitmap(BITMAP_FILE_PTR bitmap, LPDIRECTDRAWSURFACE7 lpdds, POINT coor)
 {
     DDSURFACEDESC2 ddsd;  //  direct draw surface description 
 

@@ -4,6 +4,7 @@
 #include"player.h"
 #include <Windows.h>
 //then define game states
+#define PREFACE (EGameState::eGameStatePreface)
 #define MAINMENU (EGameState::eGameStateMainMenu)
 #define SELECT_SKIN (EGameState::eGameStateSelectSkin)
 #define SELECT_HARDNESS (EGameState::eGameStateSelectHardness)
@@ -46,7 +47,7 @@ private:
 
 public:
 	enum EGameState {
-		eGameStateMainMenu = 0, eGameStateSelectSkin, eGameStateSelectHardness,eGameStateSettings,eGameStateHelp,  
+		eGameStatePreface=0, eGameStateMainMenu = 1, eGameStateSelectSkin, eGameStateSelectHardness,eGameStateSettings,eGameStateHelp,  
 		eGameStateLogin,  eGameStateRegister,eGameStateShowRank,eGameStatePrelude, eGameStateSinglePlayer, eGameStateSingleFailure, eGameStateSingleSuccess,
 		eGameStateWaitOthers, eGameStateMultiPlayer,
 		eGameStateWaitToEnd, 
@@ -59,6 +60,7 @@ private:
 
 public:
 
+	void Preface();
 	void ConnectToServ();//connect to server
 	void GetCurMsg();
 	void ProcessButtonMsg();//处理按钮事件

@@ -52,15 +52,17 @@ UINT RGBBIT(UCHAR a, UCHAR r, UCHAR g, UCHAR b);
 int DDraw_Init(int width, int height);
 int DDraw_Shutdown(void);
 LPDIRECTDRAWCLIPPER DDraw_Attach_Clipper(LPDIRECTDRAWSURFACE7 lpdds, int num_rects, LPRECT clip_list);
-LPDIRECTDRAWSURFACE7 DDraw_Create_Surface(int width, int height, int mem_flags = 0, USHORT color_key_value = 0);
+LPDIRECTDRAWSURFACE7 DDraw_Create_Surface(int width, int height, int mem_flags = 0,
+    UINT color_key_low = RGBBIT(0, 255, 255, 255),
+    UINT color_key_high = RGBBIT(0, 255, 255, 255));
 int DDraw_Fill_Surface(LPDIRECTDRAWSURFACE7 lpdds, USHORT color, RECT* client = NULL);
 int DDraw_Flip(void);
 void Change_To_Client_Rect(LPRECT rect);
-
+UINT Gradual_Change(UINT A, UINT B, int alpha);
 
 typedef class BITMAP_FILE_TAG
 {
-    public:
+public:
     BITMAPFILEHEADER bitmapfileheader;  // this contains the bitmapfile header
     BITMAPINFOHEADER bitmapinfoheader;  // this is all the info including the palette
     UINT* buffer;           // this is a pointer to the data
@@ -68,7 +70,9 @@ typedef class BITMAP_FILE_TAG
     int Load_File(const char* filename);
     int Unload_File();
 } BITMAP_FILE, * BITMAP_FILE_PTR;
-void DDraw_Draw_Bitmap(BITMAP_FILE_PTR bitmap, LPDIRECTDRAWSURFACE7 lpdds,POINT coor);
+void DDraw_Draw_Bitmap(BITMAP_FILE_PTR bitmap, LPDIRECTDRAWSURFACE7 lpdds, POINT coor);
+void DDraw_SetColorKey(LPDIRECTDRAWSURFACE7 lpdds, UINT color_key_low = RGBBIT(0, 255, 255, 255),
+    UINT color_key_high = RGBBIT(0, 255, 255, 255));
 typedef class BOB_TYP
 {
 private:
@@ -104,11 +108,13 @@ public:
     void Hide() { RESET_BIT(attr, BOB_ATTR_VISIBLE); }
     void Show() { SET_BIT(attr, BOB_ATTR_VISIBLE); }
     int Create(int x, int y, int width, int height, int num_frames, int attr,
-        int mem_flags = 0, UINT color_key_value = RGBBIT(0, 255, 255, 255));
+        int mem_flags = 0, UINT color_key_low = RGBBIT(0, 255, 255, 255),
+        UINT color_key_high = RGBBIT(0, 255, 255, 255));
     int Destroy();
     int Draw(LPDIRECTDRAWSURFACE7 dest);
     int Draw_Scaled(int swidth, int sheight, LPDIRECTDRAWSURFACE7 dest);
     int Load_Frame(BITMAP_FILE_PTR bitmap, int frame, int cx, int cy, int mode);
+    void Load_Gradual_Frame(BITMAP_FILE_PTR bitmap1, BITMAP_FILE_PTR bitmap2, int cx, int cy, int step);
     int Animate();
     int Move();
     int Load_Animation(int anim_index, int num_frames, int* sequence, int next_animation);
