@@ -20,7 +20,7 @@ void CButton::init_by_ID(int ID)
 	for(int i=0;i<3;i++)m_Style[i]=(char*)malloc(30 * sizeof(char));
 	for (int i = 0; i < 3; i++)
 	{ 
-		m_ButtonSur[i] = DDraw_Create_Surface(1000, 100);
+		m_ButtonSur[i] = DDraw_Create_Surface(1000, 100,0,0);
 	}
 	switch (m_ID)
 	{
