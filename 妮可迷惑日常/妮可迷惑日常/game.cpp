@@ -74,22 +74,27 @@ void CGame::Preface()
             picture1.Unload_File(); picture2.Unload_File();
         }
         inited = true;
+        for (int i = 0; i < 5; ++i) pref[0].Animate();			/***************************/
     }
     Clock t_clock;
     t_clock.Start_Clock();
 
-    static int frame{ 0 };
+    static int frame{ -30 };									/***************************/
     DDraw_Fill_Surface(lpddsback, 0);
-    if (frame == 80)
+    static int counter = 0;
+    if (frame == 76)
     {
-        static int counter2 = 0;
         pref[1].Draw(lpddsback);
-        if (counter2 >= 100) frame++;
-        counter2++;
+        if (counter >= 100) frame++;
+        counter++;
         t_clock.Wait_Clock(30);
         return;
     }
-    if (frame++ < 80) {
+
+    if (frame++ < 0) {
+        pref[0].Draw(lpddsback);	
+    } 	
+    else if (frame < 76) {	
         pref[0].Animate();
         pref[0].Draw(lpddsback);
     }
@@ -99,9 +104,8 @@ void CGame::Preface()
     }
     else
     {
-        static int counter = 0;
         pref[1].Draw(lpddsback);
-        if(counter>=70)m_eGameState = MAINMENU;
+        if (counter >= 170)m_eGameState = MAINMENU;
         counter++;
     }
     t_clock.Wait_Clock(30);
