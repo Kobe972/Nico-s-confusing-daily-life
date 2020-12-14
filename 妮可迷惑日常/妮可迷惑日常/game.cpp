@@ -1,5 +1,6 @@
 #include"game.h"
 extern CButton button[20];
+extern CCheckBox checkbox[20];
 EXTERN_INPUT_DATA()
 inline void CGame::SetGameState(CGame::EGameState eGameStateCurrent)
 {
@@ -13,8 +14,12 @@ inline void CGame::SetWindowHandle(HWND hwnd)
 void CGame::GameInit()
 {
     SetGameState(PREFACE);
-    for(int i=ISINGLE_MODE;i<=IREGISTRY;i++)
+    for(int i = ISINGLE_MODE;i <= IRETURN;i++)
         button[i].init_by_ID(i);//The ID of the ith button is i
+
+    checkbox[JSILENCE].Create(JSILENCE, JSILENCE_WIDTH, JSILENCE_HEIGHT,
+        JSILENCE_X, JSILENCE_Y, "silence", CSTATEOFF);
+
     DInput_Init();
     DInput_Init_Keyboard();
     DInput_Init_Mouse();
@@ -52,6 +57,7 @@ void CGame::GameMain()
 	}
     GetCurMsg();
     ProcessButtonMsg();
+    ProcessCheckBoxMsg();
     Sleep(30);
 }
 void CGame::Preface()
@@ -143,21 +149,49 @@ void CGame::ProcessButtonMsg()
                 default:
                     break;
                 }
+                button[i].m_state = BSTATENORMAL;
             }
         }
+    case SETTINGS:
+        button[IRETURN].Check();
+        if (button[IRETURN].m_state == BSTATEUP) {
+            m_eGameState = MAINMENU;
+            button[IRETURN].m_state = BSTATENORMAL;
+        }
+        break;
+    case HELP:
+        button[IRETURN].Check();
+        if (button[IRETURN].m_state == BSTATEUP) {
+            m_eGameState = MAINMENU;
+            button[IRETURN].m_state = BSTATENORMAL;
+        }
+    default:
+        break;
     }
     return;
 }
+
+void CGame::ProcessCheckBoxMsg()
+{
+    switch (m_eGameState)
+    {
+    case SETTINGS:
+        checkbox[JSILENCE].Check();
+        m_IsSilent = checkbox[JSILENCE].m_state;
+    default:
+        break;
+    }
+    return;
+}
+
 void CGame::ProcessKeyMsg()
 {
     return;
 }
 void CGame::ShowMenu()
 {
-    UINT* source_ptr,   // working pointers
-        * dest_ptr;
     BITMAP_FILE_PTR bitmap=new BITMAP_FILE;
-    bitmap->Load_File(".\\background\\MainMenu.bmp");LPDIRECTDRAWSURFACE7 lpdds;
+    bitmap->Load_File(".\\background\\MainMenu.bmp");
     DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
     bitmap->Unload_File();
     for (int i = ISINGLE_MODE; i <= IREGISTRY; i++) button[i].Draw();
@@ -178,13 +212,22 @@ void CGame::MultiPlayer()
 
 void CGame::Help()
 {
-    MessageBox(NULL, "Function not defined", "Attention", MB_OK);
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    bitmap->Load_File(".\\background\\Help.bmp");
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
+    button[IRETURN].Draw();
     return;
 }
 
 void CGame::Settings()
 {
-    MessageBox(NULL, "Function not defined", "Attention", MB_OK);
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    bitmap->Load_File(".\\background\\MainMenu.bmp"); //wait for load
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
+    checkbox[JSILENCE].Draw();
+    button[IRETURN].Draw();
     return;
 }
 

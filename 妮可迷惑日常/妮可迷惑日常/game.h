@@ -18,6 +18,7 @@ EXTERN_BOB_OBJECTS()
 EXTERN_INPUT_DATA()
 
 extern CButton button[20];
+extern CCheckBox checkbox[20];
 class CGame
 {
 public:
@@ -32,7 +33,9 @@ private:
 	CPlayer m_player;
 	CPlayer m_opponents[10];
 	int m_OpponentCnt;
-	int m_OpponentProceses; //from 1 to 100,indicates how much 
+	int m_OpponentProceses; //from 1 to 100,indicates how much
+private: //game state
+	bool m_IsSilent = false;
 	
 	CMap m_map;
 	int m_CurrentObstacles; //indicates the obstacle the player is going through
@@ -64,6 +67,7 @@ public:
 	void ConnectToServ();//connect to server
 	void GetCurMsg();
 	void ProcessButtonMsg();//处理按钮事件
+	void ProcessCheckBoxMsg();//处理单选框事件
 	void ProcessKeyMsg();
 	void ShowMenu();
 	void EnterFrame();//绘制游戏下一帧

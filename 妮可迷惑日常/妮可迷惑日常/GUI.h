@@ -8,12 +8,25 @@
 #define IHELP 3
 #define ILOG 4
 #define IREGISTRY 5
-#define ISEE_RANKS 6
+#define IRETURN 6
+#define ISEE_RANKS 7
 //button states
 #define BSTATENORMAL 0
 #define BSTATEON 1
 #define BSTATEDOWN 2
 #define BSTATEUP 3
+
+
+//checkbox ID
+#define JSILENCE 1
+//checkbox environment variable
+#define JSILENCE_X 400 
+#define JSILENCE_Y 300
+#define JSILENCE_WIDTH 116
+#define JSILENCE_HEIGHT 39
+//checkbox states
+#define CSTATEON 0
+#define CSTATEOFF 1
 class CButton : CGameEntry
 {
 public:
@@ -31,6 +44,25 @@ public:
 	void Draw();
 	void Check();//process its reaction toward mouse
 };
+
+class CCheckBox : CGameEntry
+{
+public:
+	~CCheckBox();
+	void Create(int ID, int width, int height, int x, int y, std::string filename, bool state);
+	RECT boarder; //按钮边界
+	int m_Width, m_Height;
+	char* m_Style[2];
+	LPDIRECTDRAWSURFACE7 m_CheckBoxSur[2];
+	BITMAP_FILE m_bitmap[2];
+	int m_ID;
+	int m_state;
+	int m_ClipTime = GetTickCount(); //last mouse clip time
+public:
+	void Draw();
+	void Check();//process its reaction toward mouse
+};
+
 class CINPUTBOX : CGameEntry
 {
 public:
