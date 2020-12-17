@@ -57,6 +57,7 @@ LPDIRECTDRAWSURFACE7 DDraw_Create_Surface(int width, int height, int mem_flags =
     UINT color_key_high = RGBBIT(0, 255, 255, 255));
 int DDraw_Fill_Surface(LPDIRECTDRAWSURFACE7 lpdds, USHORT color, RECT* client = NULL);
 int DDraw_Flip(void);
+int Draw_Text_GDI(char* text, int x, int y, COLORREF color, LPDIRECTDRAWSURFACE7 lpdds);
 void Change_To_Client_Rect(LPRECT rect);
 UINT Gradual_Change(UINT A, UINT B, int alpha);
 

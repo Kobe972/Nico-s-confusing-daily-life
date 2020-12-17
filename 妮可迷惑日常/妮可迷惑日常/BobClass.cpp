@@ -901,3 +901,14 @@ void Change_To_Client_Rect(LPRECT rect)
     rect->bottom += rect2.top;
     return;
 }
+int Draw_Text_GDI(char* text, int x, int y, COLORREF color, LPDIRECTDRAWSURFACE7 lpdds)
+{
+    HDC xdc; 
+    if (FAILED(lpdds->GetDC(&xdc)))
+        return(0);
+    SetTextColor(xdc, color);
+    SetBkMode(xdc, TRANSPARENT);
+    TextOut(xdc, x, y, text, strlen(text));
+    lpdds->ReleaseDC(xdc);
+    return(1);
+}

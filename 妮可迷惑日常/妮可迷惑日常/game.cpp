@@ -1,6 +1,7 @@
 #include"game.h"
 extern CButton button[20];
 extern CCheckBox checkbox[20];
+extern CInputBox inputbox[5];
 EXTERN_INPUT_DATA()
 inline void CGame::SetGameState(CGame::EGameState eGameStateCurrent)
 {
@@ -14,11 +15,27 @@ inline void CGame::SetWindowHandle(HWND hwnd)
 void CGame::GameInit()
 {
     SetGameState(PREFACE);
-    for(int i = ISINGLE_MODE;i <= IRETURN;i++)
-        button[i].init_by_ID(i);//The ID of the ith button is i
+    //load buttons in main menu
+    button[ISINGLE_MODE].Create(ISINGLE_MODE, 271, 63, 250, 160, "button1");
+    button[IMULTIMODE].Create(IMULTIMODE, 271, 63, 250, 243, "button2");
+    button[ISETTINGS].Create(ISETTINGS, 271, 63, 250, 326, "button3");
+    button[IHELP].Create(IHELP, 271, 63, 250, 409, "button4");
+    button[ILOG].Create(ILOG, 150, 62, 50, 500, "log");
+    button[IREGISTRY].Create(IREGISTRY, 150, 62, 220, 500, "registry");
+    //load return button
+    button[IRETURN].Create(IRETURN, 80, 80, 0, 0, "return");
+    //load skin button
+    button[IPETERSKIN].Create(IPETERSKIN, 150, 200, 100, 120, "Peter");
+    button[ISATASKIN].Create(ISATASKIN, 150, 200, 300, 120, "Sata");
+    button[ITINGTINGSKIN].Create(ITINGTINGSKIN, 150, 200, 500, 120, "TingTing");
+    button[IMBGSKIN].Create(IMBGSKIN, 150, 200, 100, 340, "MBG");
+    button[ICWKSKIN].Create(ICWKSKIN, 150, 200, 300, 340, "CWK");
+    button[IOK_SELECTHARDSHIP].Create(IOK_SELECTHARDSHIP, 152, 63, 590, 500, "OK_SelectHardship");
 
     checkbox[JSILENCE].Create(JSILENCE, JSILENCE_WIDTH, JSILENCE_HEIGHT,
         JSILENCE_X, JSILENCE_Y, "silence", CSTATEOFF);
+
+    inputbox[IHARDSHIPBOX].Create(IHARDSHIPBOX, 250, 25, 80, 250, false);
 
     DInput_Init();
     DInput_Init_Keyboard();
@@ -51,13 +68,28 @@ void CGame::GameMain()
     case REGISTRY:
         Reg();
         break;
-    break;
+    case SELECT_HARDNESS:
+        SelectHardship();
+        break;
+    case WAITOTHERS:
+        WaitOthers();
+        break;
+    case PRELUDE:
+        Prelude();
+        break;
 	default:
 		break;
 	}
-    GetCurMsg();
-    ProcessButtonMsg();
-    ProcessCheckBoxMsg();
+    HWND hw;
+    hw = GetForegroundWindow();
+    if (hw==main_window_handle)
+    {
+        GetCurMsg();//include mouse and keyboard.understand "cur" as "current",not "cursor"
+        ProcessButtonMsg();
+        ProcessCheckBoxMsg();
+        ProcessKeyMsg();
+    }
+    
     Sleep(30);
 }
 void CGame::Preface()
@@ -126,6 +158,7 @@ void CGame::GetCurMsg()
     GetCursorPos(&pos);
     ScreenToClient(main_window_handle, &pos);
     DInput_Read_Mouse();
+    DInput_Read_Keyboard();
     return;
 }
 void CGame::ProcessButtonMsg()
@@ -165,6 +198,26 @@ void CGame::ProcessButtonMsg()
             m_eGameState = MAINMENU;
             button[IRETURN].m_state = BSTATENORMAL;
         }
+    case SELECT_SKIN:
+        for (int i = IPETERSKIN; i <= ICWKSKIN; i++)
+        {
+            button[i].Check();
+            if (button[i].m_state == BSTATEUP) {
+                m_player.m_PlayerSkin = i - IPETERSKIN;
+                if (m_IsSingle) SetGameState(SELECT_HARDNESS);
+                else SetGameState(WAITOTHERS);
+                button[i].m_state = BSTATENORMAL;
+            }
+        }
+        break;
+    case SELECT_HARDNESS:
+        button[IOK_SELECTHARDSHIP].Check();
+        if (button[IOK_SELECTHARDSHIP].m_state == BSTATEUP)
+        {
+            m_hardness = atoi(inputbox[IHARDSHIPBOX].m_input);
+            SetGameState(PRELUDE);
+        }
+        break;
     default:
         break;
     }
@@ -186,6 +239,14 @@ void CGame::ProcessCheckBoxMsg()
 
 void CGame::ProcessKeyMsg()
 {
+    switch (m_eGameState)
+    {
+    case SELECT_HARDNESS:
+        inputbox[IHARDSHIPBOX].Check();
+        break;
+    default:
+        break;
+    }
     return;
 }
 void CGame::ShowMenu()
@@ -223,7 +284,7 @@ void CGame::Help()
 void CGame::Settings()
 {
     BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
-    bitmap->Load_File(".\\background\\MainMenu.bmp"); //wait for load
+    bitmap->Load_File(".\\background\\Setting.bmp"); //wait for load
     DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
     bitmap->Unload_File();
     checkbox[JSILENCE].Draw();
@@ -233,13 +294,25 @@ void CGame::Settings()
 
 void CGame::SelectSkin()
 {
-    MessageBox(NULL, "Function not defined", "Attention", MB_OK);
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    bitmap->Load_File(".\\background\\SelectSkin.bmp"); //wait for load
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
+    for (int i = IPETERSKIN; i <= ICWKSKIN; i++)
+    {
+        button[i].Draw();
+    }
     return;
 }
 
 void CGame::SelectHardship()
 {
-    MessageBox(NULL, "Function not defined", "Attention", MB_OK);
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    bitmap->Load_File(".\\background\\SelectHardship.bmp"); //wait for load
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
+    button[IOK_SELECTHARDSHIP].Draw();
+    inputbox[IHARDSHIPBOX].Draw();
     return;
 }
 
@@ -252,6 +325,16 @@ void CGame::Login()
 void CGame::Reg()
 {
     MessageBox(NULL, "Function not defined", "Attention", MB_OK);
+    return;
+}
+void CGame::Prelude()
+{
+    MessageBox(NULL, "function Prelude() not defined", "Attention", MB_OK);
+    return;
+}
+void CGame::WaitOthers()
+{
+    MessageBox(NULL, "Function WaitOthers() not developed!", "Attention", MB_OK);
     return;
 }
 CGame::~CGame()

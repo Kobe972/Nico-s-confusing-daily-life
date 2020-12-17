@@ -69,11 +69,11 @@ public:
 public:
 	BOB m_Player;
 	int m_Gravity = 0;
-
+	int m_PlayerSkin;				//skin id
 private:
 	EPlayerState m_ePlayerState{ ePlayerStateDefault };
 	int m_PlayerDetail;				//more accurate state
-	int m_PlayerSkin;				//skin id
+	
 	char* m_skin;					//skin file(bmp)
 	//Size and location was defined in the class CGameEntry
 
