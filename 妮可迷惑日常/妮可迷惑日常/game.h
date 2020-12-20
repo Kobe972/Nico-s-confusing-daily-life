@@ -15,6 +15,13 @@
 #define REGISTRY (EGameState::eGameStateRegister) //the ID of the button is IREGISTRY,be aware of it
 #define SEE_RANKS (EGameState::eGameStateShowRank)
 #define PRELUDE (EGameState::eGameStatePrelude)
+#define SINGLE_PLAYER_BEGIN (EGameState::eGameStateSinglePlayer)
+//prelude ID
+#define ISIGN_NAME 0
+#define IMATH_TEST 1
+#define ICONFESSION 2
+#define I2048 3
+#define ICARD 4
 #pragma warning
 EXTERN_BOB_OBJECTS()
 EXTERN_INPUT_DATA()
@@ -98,6 +105,10 @@ public:
 private:
 	HWND m_hWnd;
 
+public:
+	int m_prelude_ID=-1; //not enter the state
+	int m_prelude_frame;
+	const int frame_number[5] = { 10,10,6,2,3 };//frame number for every prelude ID
 private:
 	//不同阶段初始化函数和函数指针数组
 

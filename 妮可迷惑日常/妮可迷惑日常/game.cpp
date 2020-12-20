@@ -77,6 +77,9 @@ void CGame::GameMain()
     case PRELUDE:
         Prelude();
         break;
+    case SINGLE_PLAYER_BEGIN:
+        SinglePlayer();
+        break;
 	default:
 		break;
 	}
@@ -329,7 +332,54 @@ void CGame::Reg()
 }
 void CGame::Prelude()
 {
-    MessageBox(NULL, "function Prelude() not defined", "Attention", MB_OK);
+    static bool next_available=true;//prevent from overacting to button messages
+    srand((unsigned)time(NULL));
+    if (m_prelude_ID == -1)
+    {
+        m_prelude_ID = rand()%4;
+        m_prelude_frame = 0;
+    }
+    if (mouse_state.rgbButtons[MOUSE_LEFT_BUTTON]&0x80&&next_available)
+    {
+        m_prelude_frame++;
+        next_available = false;
+    }
+    if (!(mouse_state.rgbButtons[MOUSE_LEFT_BUTTON] & 0x80)) next_available = true;
+    if (m_prelude_frame >= frame_number[m_prelude_ID])
+    {
+        SetGameState(SINGLE_PLAYER_BEGIN);
+        return;
+    }
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    char path[50];
+    strcpy(path, ".\\Prelude\\");
+    switch (m_prelude_ID)
+    {
+    case ISIGN_NAME:
+        strcat(path, "sign_name\\");
+        break;
+    case IMATH_TEST:
+        strcat(path, "math_test\\");
+        break;
+    case ICONFESSION:
+        strcat(path, "confession\\");
+           break;
+    case I2048:
+        strcat(path, "2048\\");
+        break;
+    case ICARD:
+        strcat(path, "card\\");
+    default:
+        MessageBox(NULL, "switch in Prelude() of game.cpp failed!", "Attention", MB_OK);
+        return;
+    }
+    char tmp[2];
+    _itoa(m_prelude_frame, tmp, 10);
+    strcat(path, tmp);
+    strcat(path, ".bmp");
+    bitmap->Load_File(path);
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
     return;
 }
 void CGame::WaitOthers()
