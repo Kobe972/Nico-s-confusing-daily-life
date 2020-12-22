@@ -228,7 +228,7 @@ void CGame::ProcessButtonMsg()
             button[i].Check();
             if (button[i].m_state == BSTATEUP) {
                 if (!m_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
-                if (!m_IsSilent && i == IMBGSKIN) mciSendString("play .\\sound\\click\\mbg.wav", NULL, 0, NULL);
+                if (!m_IsSilent && i == IMBGSKIN) mciSendString("play .\\sound\\click\\mbg.mp3", NULL, 0, NULL);
                 int T_PlayerSkin = i - IPETERSKIN;
                 m_player.Create(SkinFrameNumber[T_PlayerSkin]);
                 m_player.LoadSkinFrame(T_PlayerSkin, SkinRunningNumber[T_PlayerSkin], SkinAirHikingNumber[T_PlayerSkin]);
