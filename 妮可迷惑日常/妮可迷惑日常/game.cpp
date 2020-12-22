@@ -2,6 +2,7 @@
 extern CButton button[20];
 extern CCheckBox checkbox[20];
 extern CInputBox inputbox[5];
+extern CStaticObstacle staticobstacle[20];
 EXTERN_INPUT_DATA()
 inline void CGame::SetGameState(CGame::EGameState eGameStateCurrent)
 {
@@ -10,11 +11,12 @@ inline void CGame::SetGameState(CGame::EGameState eGameStateCurrent)
 
 inline void CGame::SetWindowHandle(HWND hwnd)
 {
-	m_hWnd = hwnd;
+    m_hWnd = hwnd;
 }
 void CGame::GameInit()
 {
     SetGameState(PREFACE);
+    //SetGameState(MAINMENU);
     //load buttons in main menu
     button[ISINGLE_MODE].Create(ISINGLE_MODE, 271, 63, 250, 160, "button1");
     button[IMULTIMODE].Create(IMULTIMODE, 271, 63, 250, 243, "button2");
@@ -37,6 +39,10 @@ void CGame::GameInit()
 
     inputbox[IHARDSHIPBOX].Create(IHARDSHIPBOX, 250, 25, 80, 250, false);
 
+    staticobstacle[SOFIELD].Create(1, 0, 0, 0, "field");
+    staticobstacle[SOPILLAR].Create(0, 0, 0, 0, "pillar");
+    staticobstacle[SOMATHBOOK].Create(0, 0, 0, 0, "mathbook");
+
     DInput_Init();
     DInput_Init_Keyboard();
     DInput_Init_Mouse();
@@ -45,12 +51,12 @@ void CGame::GameInit()
 }
 void CGame::GameMain()
 {
-	switch (m_eGameState)
-	{
+    switch (m_eGameState)
+    {
     case PREFACE:
         Preface();
         break;
-	case MAINMENU:
+    case MAINMENU:
         ShowMenu();
         break;
     case SELECT_SKIN:
@@ -80,20 +86,26 @@ void CGame::GameMain()
     case SINGLE_PLAYER_BEGIN:
         SinglePlayer();
         break;
-	default:
-		break;
-	}
+    case SINGLEFAILURE:
+        SingleFailure();
+        break;
+    case SINGLESUCCESS:
+        SingleSuccess();
+        break;
+    default:
+        break;
+    }
     HWND hw;
     hw = GetForegroundWindow();
-    if (hw==main_window_handle)
+    if (hw == main_window_handle)
     {
         GetCurMsg();//include mouse and keyboard.understand "cur" as "current",not "cursor"
         ProcessButtonMsg();
         ProcessCheckBoxMsg();
         ProcessKeyMsg();
     }
-    
-    Sleep(30);
+
+    Sleep(15);
 }
 void CGame::Preface()
 {
@@ -133,9 +145,9 @@ void CGame::Preface()
     }
 
     if (frame++ < 0) {
-        pref[0].Draw(lpddsback);	
-    } 	
-    else if (frame < 76) {	
+        pref[0].Draw(lpddsback);
+    }
+    else if (frame < 76) {
         pref[0].Animate();
         pref[0].Draw(lpddsback);
     }
@@ -146,7 +158,13 @@ void CGame::Preface()
     else
     {
         pref[1].Draw(lpddsback);
-        if (counter >= 170)m_eGameState = MAINMENU;
+        if (counter >= 170)
+        {
+            m_eGameState = MAINMENU;
+            srand((unsigned)time(NULL));
+            if (rand() % 2 == 0)  mciSendString("play .\\sound\\bgmusic\\0.mp3 repeat", NULL, 0, NULL);
+            else mciSendString("play .\\sound\\bgmusic\\1.mp3 repeat", NULL, 0, NULL);
+        }
         counter++;
     }
     t_clock.Wait_Clock(30);
@@ -165,7 +183,7 @@ void CGame::GetCurMsg()
     return;
 }
 void CGame::ProcessButtonMsg()
-{
+{     
     switch (m_eGameState)
     {
     case MAINMENU:
@@ -174,6 +192,7 @@ void CGame::ProcessButtonMsg()
             button[i].Check();
             if (button[i].m_state == BSTATEUP)
             {
+                if(!m_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
                 switch (i)
                 {
                 case ISINGLE_MODE:m_IsSingle = true; m_eGameState = SELECT_SKIN; break;
@@ -191,6 +210,7 @@ void CGame::ProcessButtonMsg()
     case SETTINGS:
         button[IRETURN].Check();
         if (button[IRETURN].m_state == BSTATEUP) {
+            if (!m_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
             m_eGameState = MAINMENU;
             button[IRETURN].m_state = BSTATENORMAL;
         }
@@ -198,6 +218,7 @@ void CGame::ProcessButtonMsg()
     case HELP:
         button[IRETURN].Check();
         if (button[IRETURN].m_state == BSTATEUP) {
+            if (!m_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
             m_eGameState = MAINMENU;
             button[IRETURN].m_state = BSTATENORMAL;
         }
@@ -206,7 +227,11 @@ void CGame::ProcessButtonMsg()
         {
             button[i].Check();
             if (button[i].m_state == BSTATEUP) {
-                m_player.m_PlayerSkin = i - IPETERSKIN;
+                if (!m_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
+                if (!m_IsSilent && i == IMBGSKIN) mciSendString("play .\\sound\\click\\mbg.wav", NULL, 0, NULL);
+                int T_PlayerSkin = i - IPETERSKIN;
+                m_player.Create(SkinFrameNumber[T_PlayerSkin]);
+                m_player.LoadSkinFrame(T_PlayerSkin, SkinRunningNumber[T_PlayerSkin], SkinAirHikingNumber[T_PlayerSkin]);
                 if (m_IsSingle) SetGameState(SELECT_HARDNESS);
                 else SetGameState(WAITOTHERS);
                 button[i].m_state = BSTATENORMAL;
@@ -217,8 +242,13 @@ void CGame::ProcessButtonMsg()
         button[IOK_SELECTHARDSHIP].Check();
         if (button[IOK_SELECTHARDSHIP].m_state == BSTATEUP)
         {
+            if (!m_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
             m_hardness = atoi(inputbox[IHARDSHIPBOX].m_input);
+            m_map.Create(100, m_hardness, 400, 600);
             SetGameState(PRELUDE);
+            button[IOK_SELECTHARDSHIP].m_state = BSTATENORMAL;
+            mciSendString("stop .\\sound\\bgmusic\\1.mp3", NULL, 0, NULL);
+            mciSendString("stop .\\sound\\bgmusic\\0.mp3", NULL, 0, NULL);
         }
         break;
     default:
@@ -233,7 +263,7 @@ void CGame::ProcessCheckBoxMsg()
     {
     case SETTINGS:
         checkbox[JSILENCE].Check();
-        m_IsSilent = checkbox[JSILENCE].m_state;
+        m_IsSilent = !checkbox[JSILENCE].m_state;
     default:
         break;
     }
@@ -254,7 +284,7 @@ void CGame::ProcessKeyMsg()
 }
 void CGame::ShowMenu()
 {
-    BITMAP_FILE_PTR bitmap=new BITMAP_FILE;
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
     bitmap->Load_File(".\\background\\MainMenu.bmp");
     DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
     bitmap->Unload_File();
@@ -264,8 +294,33 @@ void CGame::ShowMenu()
 
 void CGame::SinglePlayer()
 {
-    MessageBox(NULL, "Function not defined", "Attention", MB_OK);
+    DDraw_Fill_Surface(lpddsback, RGBBIT(0, 255, 255, 255));
+    if (!m_map.MoveNext())
+    {
+        SetGameState(SINGLESUCCESS);
+        return;
+    }
+    m_map.Draw();
+    m_player.GetUnder(m_map.m_CurBarrier, m_map.m_CurSafe, m_map.m_BarrierNumber);
+    m_player.MoveNext();
+    m_player.Draw();
+    DDraw_Flip();
+    if (!m_player.LogicRun(m_map.m_CurBarrier, m_map.m_CurSafe, m_map.m_BarrierNumber))
+        SetGameState(SINGLEFAILURE);
     return;
+}
+
+void CGame::SingleFailure()
+{
+    m_prelude_ID = -1;
+    m_player.m_Player.Destroy();
+    SetGameState(MAINMENU);
+}
+
+void CGame::SingleSuccess()
+{
+    m_player.m_Player.Destroy();
+    SetGameState(MAINMENU);
 }
 
 void CGame::MultiPlayer()
@@ -332,14 +387,14 @@ void CGame::Reg()
 }
 void CGame::Prelude()
 {
-    static bool next_available=true;//prevent from overacting to button messages
+    static bool next_available = true;//prevent from overacting to button messages
     srand((unsigned)time(NULL));
     if (m_prelude_ID == -1)
     {
-        m_prelude_ID = rand()%4;
+        m_prelude_ID = rand() % 4;
         m_prelude_frame = 0;
     }
-    if (mouse_state.rgbButtons[MOUSE_LEFT_BUTTON]&0x80&&next_available)
+    if (mouse_state.rgbButtons[MOUSE_LEFT_BUTTON] & 0x80 && next_available)
     {
         m_prelude_frame++;
         next_available = false;
@@ -363,7 +418,7 @@ void CGame::Prelude()
         break;
     case ICONFESSION:
         strcat(path, "confession\\");
-           break;
+        break;
     case I2048:
         strcat(path, "2048\\");
         break;

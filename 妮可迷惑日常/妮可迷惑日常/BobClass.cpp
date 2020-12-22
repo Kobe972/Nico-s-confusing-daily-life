@@ -903,7 +903,7 @@ void Change_To_Client_Rect(LPRECT rect)
 }
 int Draw_Text_GDI(char* text, int x, int y, COLORREF color, LPDIRECTDRAWSURFACE7 lpdds)
 {
-    HDC xdc; 
+    HDC xdc;
     if (FAILED(lpdds->GetDC(&xdc)))
         return(0);
     SetTextColor(xdc, color);

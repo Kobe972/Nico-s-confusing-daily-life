@@ -3,16 +3,16 @@
 #include "BobClass.h"
 //define of the information about player
 #define PlayerStartX 200
-#define PlayerStartY 360
+#define PlayerStartY 200
 #define PlayerWidth 80
 #define PlayerHeight 80
 #define PlayerSkinCounter 10 //number of the skin
 
 //move argument
 #define PlayerAnimateSpeed 5
-#define PlayerJumpVx 20
-#define PlayerJumpVy -25
-#define PlayerGravity 4
+#define PlayerJumpVx 0
+#define PlayerJumpVy -35
+#define PlayerGravity 5
 #define PlayerMovingInterval 1
 /*
 argument the first version
@@ -32,7 +32,11 @@ argument the first version
 #define PlayerNormalWidth 80
 #define PlayerNormalHeight 80
 #define PlayerSlidngWidth 80
-#define PlayerSlidingHeight 80
+#define PlayerSlidingHeight 60
+
+const int SkinFrameNumber[10] = { 22, 20, 21, 21, 21 };
+const int SkinRunningNumber[10] = { 12, 11, 12, 12, 11 };
+const int SkinAirHikingNumber[10] = { 6, 6, 6, 6, 6 };
 
 
 #define LineCross(a, b, c, d) (b >= c && d >= a)
@@ -65,25 +69,28 @@ public:
 	bool Slide();
 	bool Run();
 	char* GetSkinFile(int SkinID);								//？？？
+	void GetUnder(RECT* barrier, RECT* safe, int BarrierNumber);
 	inline int GetPlayerState();
 public:
 	BOB m_Player;
 	int m_Gravity = 0;
+	int m_UnderBorder;
 	int m_PlayerSkin;				//skin id
+
 private:
 	EPlayerState m_ePlayerState{ ePlayerStateDefault };
 	int m_PlayerDetail;				//more accurate state
-	
 	char* m_skin;					//skin file(bmp)
+	int m_JumpClick;
 	//Size and location was defined in the class CGameEntry
 
 private:
 	//建议把绘图相关的东西放在这里
-	int m_PictureCounter = 0; //the number of picture we load in
+	int m_PictureCounter; //the number of picture we load in
 	int* m_FrameList[PlayerSkinCounter][4];
 	// 0 for the holdingon 1 for run 2 for jump 3 for slide
 	int m_FrameNumber[PlayerSkinCounter][4]; //the number of pictrue
-	int m_Interval = 0;
+	int m_Interval;
 
 	//BOB对象实例化
 

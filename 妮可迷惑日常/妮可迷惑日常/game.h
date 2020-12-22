@@ -16,12 +16,16 @@
 #define SEE_RANKS (EGameState::eGameStateShowRank)
 #define PRELUDE (EGameState::eGameStatePrelude)
 #define SINGLE_PLAYER_BEGIN (EGameState::eGameStateSinglePlayer)
+#define SINGLEFAILURE (EGameState::eGameStateSingleFailure)
+#define SINGLESUCCESS (EGameState::eGameStateSingleSuccess)
 //prelude ID
 #define ISIGN_NAME 0
 #define IMATH_TEST 1
 #define ICONFESSION 2
 #define I2048 3
 #define ICARD 4
+
+
 #pragma warning
 EXTERN_BOB_OBJECTS()
 EXTERN_INPUT_DATA()
@@ -29,13 +33,14 @@ EXTERN_INPUT_DATA()
 extern CButton button[20];
 extern CCheckBox checkbox[20];
 extern CInputBox inputbox[5];
+extern CStaticObstacle staticobstacle[20];
 class CGame
 {
 public:
 	void GameInit();
 	void GameMain();
-	
-	
+
+
 	~CGame();
 
 
@@ -46,7 +51,7 @@ private:
 	int m_OpponentProceses; //from 1 to 100,indicates how much
 private: //game state
 	bool m_IsSilent = false;
-	
+
 	CMap m_map;
 	int m_CurrentObstacles; //indicates the obstacle the player is going through
 	CButton m_button[100];
@@ -60,10 +65,10 @@ private:
 
 public:
 	enum EGameState {
-		eGameStatePreface=0, eGameStateMainMenu = 1, eGameStateSelectSkin, eGameStateSelectHardness,eGameStateSettings,eGameStateHelp,  
-		eGameStateLogin,  eGameStateRegister,eGameStateShowRank,eGameStatePrelude, eGameStateSinglePlayer, eGameStateSingleFailure, eGameStateSingleSuccess,
+		eGameStatePreface = 0, eGameStateMainMenu = 1, eGameStateSelectSkin, eGameStateSelectHardness, eGameStateSettings, eGameStateHelp,
+		eGameStateLogin, eGameStateRegister, eGameStateShowRank, eGameStatePrelude, eGameStateSinglePlayer, eGameStateSingleFailure, eGameStateSingleSuccess,
 		eGameStateWaitOthers, eGameStateMultiPlayer,
-		eGameStateWaitToEnd, 
+		eGameStateWaitToEnd,
 		eGameStateCount
 	};
 	//GameState 望文生义
@@ -82,6 +87,8 @@ public:
 	void ShowMenu();
 	void EnterFrame();//绘制游戏下一帧
 	void SinglePlayer();//开始
+	void SingleFailure();
+	void SingleSuccess();
 	void MultiPlayer();
 	void Help();
 	void Settings();
@@ -102,13 +109,13 @@ public:
 public:
 	inline void SetGameState(EGameState eGameStateCurrent);
 	inline void SetWindowHandle(HWND hwnd);
+public:
+	int m_prelude_ID = -1; //not enter the state
+	int m_prelude_frame;
+	const int frame_number[5] = { 10,10,6,2,3 };//frame number for every prelude ID
 private:
 	HWND m_hWnd;
 
-public:
-	int m_prelude_ID=-1; //not enter the state
-	int m_prelude_frame;
-	const int frame_number[5] = { 10,10,6,2,3 };//frame number for every prelude ID
 private:
 	//不同阶段初始化函数和函数指针数组
 

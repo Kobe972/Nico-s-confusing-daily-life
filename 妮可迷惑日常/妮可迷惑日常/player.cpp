@@ -13,6 +13,9 @@ bool CPlayer::Create(int frame_number)
         return 0;
     m_Player.Set_Anim_Speed(PlayerAnimateSpeed);
     m_ePlayerState = ePlayerStateHoldingOn;
+    m_JumpClick = 0;
+    m_PictureCounter = 0;
+    m_Interval = 0;
     return 1;
 }
 
@@ -35,7 +38,7 @@ void CPlayer::LoadSkinFrame(int SkinID, int RunFrameNumber,
     //this funtion is to Load in a new skin to the m_player bob
     BITMAP_FILE Tcurmap;
     int Tlist[MAX_BOB_FRAMES];
-    std::string THead = ".\\Picture\\Skin" + std::to_string(SkinID) + "\\"
+    std::string THead = ".\\Skin\\Skin" + std::to_string(SkinID) + "\\"
         + "Skin" + std::to_string(SkinID);
 
     //load in the holdingon frame
@@ -59,8 +62,11 @@ void CPlayer::MoveNext()
 {
     //move to next animation
     if (m_ePlayerState == ePlayerStateCount) return;
-    if (m_Interval++ >= PlayerMovingInterval) {
+    if (m_Interval++ >= PlayerMovingInterval) {                              
         m_Interval = 0;
+        if((m_ePlayerState == ePlayerStateJumping || m_ePlayerState == ePlayerStateAirHiking) 
+            && m_UnderBorder != 600)
+            m_Player.yv = min(m_Player.yv, m_UnderBorder - m_Player.y - PlayerHeight);
         m_Player.Move();
         m_Player.yv += m_Gravity;
     }
@@ -86,8 +92,21 @@ void CPlayer::GetCurBorder(RECT* border) {
     }
     border->left = m_Player.x;
     border->right = m_Player.x + Twidth;
-    border->bottom = m_Player.y + m_Player.height - Theight;
-    border->top = border->bottom - Theight;
+    border->top = m_Player.y + m_Player.height - Theight;
+    border->bottom = border->top + Theight;
+}
+
+void CPlayer::GetUnder(RECT* barrier, RECT* safe, int BarrierNumber)
+{
+    // this funcion is used to find out whether the collision occurs
+    // 0 for collision, 1 for airhiking, 2 for safe collision occurs on the top
+    RECT Tcurborder; GetCurBorder(&Tcurborder);
+    m_UnderBorder = 600;
+
+    for (int i = 0; i < BarrierNumber; ++i)
+        if (LineCross(barrier[i].left, barrier[i].right, Tcurborder.left, Tcurborder.right) &&
+            barrier[i].top >= Tcurborder.bottom)
+            m_UnderBorder = min(m_UnderBorder, barrier[i].top);
 }
 
 int CPlayer::Collision(RECT* barrier, RECT* safe, int BarrierNumber)
@@ -96,41 +115,46 @@ int CPlayer::Collision(RECT* barrier, RECT* safe, int BarrierNumber)
     // 0 for collision, 1 for airhiking, 2 for safe collision occurs on the top
     RECT Tcurborder; GetCurBorder(&Tcurborder);
 
+    if (Tcurborder.bottom > 600) return 0;
+
     int TCollisionState = 1;
     for (int i = 0; i < BarrierNumber; ++i)
     {
         RECT Tedge = barrier[i];
 
-        Tedge.right = Tedge.left;
-        if (Overlap(Tcurborder, barrier[i])) {
-            if (safe[i].left == false)
+        Tedge.bottom = Tedge.top;
+        if (Overlap(Tcurborder, Tedge)) {
+            if (safe[i].top == false)
                 return 0;
+            else
+                TCollisionState = 2;
+        }
+        Tedge.bottom = barrier[i].bottom;
+
+        Tedge.top = Tedge.bottom;
+        if (Overlap(Tcurborder, Tedge)) {
+            if (safe[i].bottom == false)
+                return 0;
+            else {} //wait for complete
+        }
+        Tedge.top = barrier[i].top;
+
+        Tedge.top++; Tedge.bottom--;
+        Tedge.right = Tedge.left;
+        if (Overlap(Tcurborder, Tedge)) {
+            if (safe[i].left == false)
+                 return 0;
             else {} //wait for complete
         }
         Tedge.right = barrier[i].right;
 
         Tedge.left = Tedge.right;
-        if (Overlap(Tcurborder, barrier[i])) {
+        if (Overlap(Tcurborder, Tedge)) {
             if (safe[i].right == false)
                 return 0;
             else {} //wait for complete
         }
         Tedge.left = barrier[i].left;
-
-        Tedge.bottom = Tedge.top;
-        if (Overlap(Tcurborder, barrier[i])) {
-            if (safe[i].top == false)
-                return 0;
-            else TCollisionState = 2;
-        }
-        Tedge.bottom = barrier[i].bottom;
-
-        Tedge.top = Tedge.bottom;
-        if (Overlap(Tcurborder, barrier[i])) {
-            if (safe[i].bottom == false)
-                return 0;
-            else {} //wait for complete
-        }
     }
     return TCollisionState;
 }
@@ -152,6 +176,19 @@ bool CPlayer::LogicRun(RECT* barrier, RECT* safe, int BarrierNumber)
         m_ePlayerState = ePlayerStateRunning;
         MoveRunning();
     }
+
+    if (keyboard_state[DIK_SPACE] & 0x80) {
+        if (!m_JumpClick) {
+            Jump();
+            m_Player.Move();
+            m_JumpClick = true;
+        }
+    }
+    else m_JumpClick = false;
+
+    if (keyboard_state[DIK_DOWN] & 0x80)
+        Slide();
+
     return true;
 }
 
@@ -170,7 +207,12 @@ bool CPlayer::Jump() {
 
 bool CPlayer::Slide()
 {
-    if (m_ePlayerState == ePlayerStateJumping || m_ePlayerState == ePlayerStateAirHiking) return 0;
+    if (m_ePlayerState == ePlayerStateJumping || m_ePlayerState == ePlayerStateAirHiking) {
+        if (m_UnderBorder == 600) return 0;
+        m_Player.y = m_UnderBorder - PlayerHeight;
+        m_ePlayerState = ePlayerStateSliding;
+        MoveSliding();
+    }
     else {
         m_ePlayerState = ePlayerStateSliding;
         MoveSliding();
