@@ -17,6 +17,7 @@
 #define RANK_RQ 9 //请求获得排名列表（客户端给服务器）
 #define BEGIN_GAME 10 //开始游戏（服务器给客户端）
 #define MAPMSG 11 //地图信息（服务器给客户端）
+#define NUM_PLAYING 12
 
 //player state
 #define LOBBY 0
