@@ -3,6 +3,7 @@
 #include"GUI.h"
 #include"player.h"
 #include <Windows.h>
+#include"SaveTools.h"
 //then define game states
 #define PREFACE (EGameState::eGameStatePreface)
 #define MAINMENU (EGameState::eGameStateMainMenu)
@@ -15,16 +16,18 @@
 #define REGISTRY (EGameState::eGameStateRegister) //the ID of the button is IREGISTRY,be aware of it
 #define SEE_RANKS (EGameState::eGameStateShowRank)
 #define PRELUDE (EGameState::eGameStatePrelude)
-#define SINGLE_PLAYER_BEGIN (EGameState::eGameStateSinglePlayer)
+#define SINGLEPLAY (EGameState::eGameStateSinglePlayer)
 #define SINGLEFAILURE (EGameState::eGameStateSingleFailure)
 #define SINGLESUCCESS (EGameState::eGameStateSingleSuccess)
-//prelude ID
+#define SINGLE_PLAYER_BEGIN (EGameState::eGameStateSinglePlayer)
+#define ACHIEVEMENT (EGameState::eGameStateAchievement)
+#define STATISTICSCOUNT (EGameState::eGameStateStatisticsCount)
+
 #define ISIGN_NAME 0
 #define IMATH_TEST 1
 #define ICONFESSION 2
 #define I2048 3
 #define ICARD 4
-
 
 #pragma warning
 EXTERN_BOB_OBJECTS()
@@ -33,7 +36,9 @@ EXTERN_INPUT_DATA()
 extern CButton button[20];
 extern CCheckBox checkbox[20];
 extern CInputBox inputbox[5];
+extern CAchievement achievement[50];
 extern CStaticObstacle staticobstacle[20];
+extern CHP hp;
 class CGame
 {
 public:
@@ -50,7 +55,6 @@ private:
 	int m_OpponentCnt;
 	int m_OpponentProceses; //from 1 to 100,indicates how much
 private: //game state
-	bool m_IsSilent = false;
 
 	CMap m_map;
 	int m_CurrentObstacles; //indicates the obstacle the player is going through
@@ -62,13 +66,14 @@ private:
 	bool m_loggedin;//whether logged in or not(1 indicates logged in,0 not)
 	int m_connected;
 	bool m_IsSingle;//if it is single player mode
+	bool m_state;
 
 public:
 	enum EGameState {
 		eGameStatePreface = 0, eGameStateMainMenu = 1, eGameStateSelectSkin, eGameStateSelectHardness, eGameStateSettings, eGameStateHelp,
 		eGameStateLogin, eGameStateRegister, eGameStateShowRank, eGameStatePrelude, eGameStateSinglePlayer, eGameStateSingleFailure, eGameStateSingleSuccess,
-		eGameStateWaitOthers, eGameStateMultiPlayer,
-		eGameStateWaitToEnd,
+		eGameStateWaitOthers, eGameStateMultiPlayer, eGameStateAchievement,
+		eGameStateWaitToEnd, eGameStateStatisticsCount,
 		eGameStateCount
 	};
 	//GameState 望文生义
@@ -91,6 +96,8 @@ public:
 	void SingleSuccess();
 	void MultiPlayer();
 	void Help();
+	void Achievement();
+	void Statisticscount();
 	void Settings();
 	void Login();//登录
 	void Reg();//注册账号
@@ -113,8 +120,21 @@ public:
 	int m_prelude_ID = -1; //not enter the state
 	int m_prelude_frame;
 	const int frame_number[5] = { 10,10,6,2,3 };//frame number for every prelude ID
+	int m_postlude_frame = 0;
+	const int fail_frame_number[5] = { 2,3,6,1,1 };
 private:
 	HWND m_hWnd;
+	void play_2048();
+	void play_math();
+	void play_card();
+	void confess();
+	void sign_name();
+	int fail_2048(); //返回是否结束，结束返回0
+	int fail_math();
+	int fail_card();
+	int success_2048();
+	int success_math();
+	int success_card();
 
 private:
 	//不同阶段初始化函数和函数指针数组
@@ -126,4 +146,3 @@ private:
 	//不同阶段逻辑运行函数和函数指针数组
 
 };
-

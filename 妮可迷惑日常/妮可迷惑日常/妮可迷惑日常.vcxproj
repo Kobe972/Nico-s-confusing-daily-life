@@ -139,7 +139,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>dinput8.lib;dsound.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dinput8.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -150,6 +150,7 @@
     <ClCompile Include="map.cpp" />
     <ClCompile Include="Nico%27s_confusing_daily_life.cpp" />
     <ClCompile Include="player.cpp" />
+    <ClCompile Include="SaveTools.cpp" />
     <ClCompile Include="T3DLIB2.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -160,6 +161,7 @@
     <ClInclude Include="map.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="player.h" />
+    <ClInclude Include="SaveTools.h" />
     <ClInclude Include="T3DLIB2.h" />
   </ItemGroup>
   <ItemGroup>

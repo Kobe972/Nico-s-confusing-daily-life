@@ -11,8 +11,8 @@
 //move argument
 #define PlayerAnimateSpeed 5
 #define PlayerJumpVx 0
-#define PlayerJumpVy -35
-#define PlayerGravity 5
+#define PlayerJumpVy -27
+#define PlayerGravity 3
 #define PlayerMovingInterval 1
 /*
 argument the first version
@@ -73,6 +73,7 @@ public:
 	inline int GetPlayerState();
 public:
 	BOB m_Player;
+	int m_HP;
 	int m_Gravity = 0;
 	int m_UnderBorder;
 	int m_PlayerSkin;				//skin id
@@ -80,7 +81,6 @@ public:
 private:
 	EPlayerState m_ePlayerState{ ePlayerStateDefault };
 	int m_PlayerDetail;				//more accurate state
-	char* m_skin;					//skin file(bmp)
 	int m_JumpClick;
 	//Size and location was defined in the class CGameEntry
 

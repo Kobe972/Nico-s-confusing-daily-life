@@ -34,10 +34,8 @@
 
 
 #include <ddraw.h>    // directX includes
-
 #include<dinput.h>
 #include"T3DLIB2.h"
-
 #pragma comment(lib, "ddraw.lib")
 #pragma comment(lib, "dxguid.lib")
 
@@ -93,7 +91,6 @@ extern LPDIRECTINPUTDEVICE8 lpdimouse;\
 extern UCHAR keyboard_state[256]; \
 extern DIMOUSESTATE mouse_state; \
 extern POINT pos;\
-
 // these read the keyboard asynchronously
 #define KEY_DOWN(vk_code) ((GetAsyncKeyState(vk_code) & 0x8000) ? 1 : 0)
 #define KEY_UP(vk_code)   ((GetAsyncKeyState(vk_code) & 0x8000) ? 0 : 1)
