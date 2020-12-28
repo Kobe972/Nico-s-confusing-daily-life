@@ -53,8 +53,8 @@ int DDraw_Init(int width, int height);
 int DDraw_Shutdown(void);
 LPDIRECTDRAWCLIPPER DDraw_Attach_Clipper(LPDIRECTDRAWSURFACE7 lpdds, int num_rects, LPRECT clip_list);
 LPDIRECTDRAWSURFACE7 DDraw_Create_Surface(int width, int height, int mem_flags = 0,
-    UINT color_key_low = RGBBIT(0, 255, 255, 255),
-    UINT color_key_high = RGBBIT(0, 255, 255, 255));
+    UINT color_key_low = RGBBIT(0, 0, 0, 0),
+    UINT color_key_high = RGBBIT(0, 0, 0, 0));
 int DDraw_Fill_Surface(LPDIRECTDRAWSURFACE7 lpdds, USHORT color, RECT* client = NULL);
 int DDraw_Flip(void);
 int Draw_Text_GDI(char* text, int x, int y, COLORREF color, LPDIRECTDRAWSURFACE7 lpdds);
@@ -72,8 +72,8 @@ public:
     int Unload_File();
 } BITMAP_FILE, * BITMAP_FILE_PTR;
 void DDraw_Draw_Bitmap(BITMAP_FILE_PTR bitmap, LPDIRECTDRAWSURFACE7 lpdds, POINT coor);
-void DDraw_SetColorKey(LPDIRECTDRAWSURFACE7 lpdds, UINT color_key_low = RGBBIT(0, 255, 255, 255),
-    UINT color_key_high = RGBBIT(0, 255, 255, 255));
+void DDraw_SetColorKey(LPDIRECTDRAWSURFACE7 lpdds, UINT color_key_low = RGBBIT(0, 0, 0, 0),
+    UINT color_key_high = RGBBIT(0, 0, 0, 0));
 typedef class BOB_TYP
 {
 private:
@@ -109,8 +109,8 @@ public:
     void Hide() { RESET_BIT(attr, BOB_ATTR_VISIBLE); }
     void Show() { SET_BIT(attr, BOB_ATTR_VISIBLE); }
     int Create(int x, int y, int width, int height, int num_frames, int attr,
-        int mem_flags = 0, UINT color_key_low = RGBBIT(0, 255, 255, 255),
-        UINT color_key_high = RGBBIT(0, 255, 255, 255));
+        int mem_flags = 0, UINT color_key_low = RGBBIT(0, 0, 0, 0),
+        UINT color_key_high = RGBBIT(0, 0, 0, 0));
     int Destroy();
     int Draw(LPDIRECTDRAWSURFACE7 dest);
     int Draw_Scaled(int swidth, int sheight, LPDIRECTDRAWSURFACE7 dest);
@@ -125,8 +125,8 @@ public:
 
 class Clock {
 private:
-    DWORD m_dwStartTime;
+    ULONGLONG m_dwStartTime;
 public:
-    void Start_Clock() { m_dwStartTime = GetTickCount(); }
-    void Wait_Clock(DWORD dwcount) { while (GetTickCount() - m_dwStartTime <= dwcount); }
+    void Start_Clock() { m_dwStartTime = GetTickCount64(); }
+    void Wait_Clock(DWORD dwcount) { while (GetTickCount64() - m_dwStartTime <= dwcount); }
 };

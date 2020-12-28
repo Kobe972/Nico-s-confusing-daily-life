@@ -19,7 +19,7 @@ EXTERN_BOB_OBJECTS()
 #define WINDOW_CLASS_NAME "WINCLASS1"
 
 // setup a 640x480 16-bit windowed mode example
-#define WINDOW_TITLE      "NICONICONI"
+#define WINDOW_TITLE      "Nico's Confusing Daily Life"
 #define WINDOW_WIDTH      800   // size of window
 #define WINDOW_HEIGHT     600
 #define WINDOWED_APP      1     // 0 not windowed, 1 windowed
@@ -82,7 +82,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd,
     {
         // simply validate the window 
         hdc = BeginPaint(hwnd, &ps);
-
         // end painting
         EndPaint(hwnd, &ps);
 
@@ -117,6 +116,7 @@ int WINAPI WinMain(HINSTANCE hinstance,
     int ncmdshow)
 {
 
+    srand(time(0));
     WNDCLASSEX winclass; // this will hold the class we create
     HWND	   hwnd;	 // generic window handle
     MSG		   msg;		 // generic message
@@ -233,7 +233,7 @@ int Game_Init(void* parms, int num_parms)
 int Game_Shutdown(void* parms, int num_parms)
 {
     return(1);
-} 
+}
 
 ///////////////////////////////////////////////////////////
 
@@ -246,6 +246,6 @@ int Game_Main(void* parms, int num_parms)
     DDraw_Flip();
     return(1);
 
-} 
+}
 
 //////////////////////////////////////////////////////////

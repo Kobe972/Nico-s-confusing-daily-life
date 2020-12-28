@@ -3,6 +3,7 @@ EXTERN_BOB_OBJECTS()
 CButton button[20];
 CCheckBox checkbox[20];
 CInputBox inputbox[5];
+CAchievement achievement[50];
 CButton::~CButton()
 {
 	for (int i = 0; i < 3; i++)
@@ -125,16 +126,6 @@ void CCheckBox::Check()//在后备缓冲表面绘图
 		if (mouse_state.rgbButtons[MOUSE_LEFT_BUTTON] & 0x80) {
 			if (GetTickCount() - m_ClipTime >= 500) {
 				m_state ^= 1;
-				if (!m_state)
-				{
-					mciSendString("stop .\\sound\\bgmusic\\1.mp3", NULL, 0, NULL);
-					mciSendString("stop .\\sound\\bgmusic\\0.mp3", NULL, 0, NULL);
-				}
-				else
-				{
-					if (rand() % 2 == 0)  mciSendString("play .\\sound\\bgmusic\\0.mp3 repeat", NULL, 0, NULL);
-					else mciSendString("play .\\sound\\bgmusic\\1.mp3 repeat", NULL, 0, NULL);
-				}
 				m_ClipTime = GetTickCount();
 			}
 		}
@@ -164,7 +155,7 @@ void CInputBox::Draw()
 		last_draw_time = clock();
 	}
 	DDRAW_INIT_STRUCT(ddbltfx);
-	ddbltfx.dwFillColor = RGBBIT(0, 255, 255, 255);
+	ddbltfx.dwFillColor = RGBBIT(0, 220, 220, 220);
 	lpddsback->Blt(&boarder, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &ddbltfx);
 	POINT beginning;
 	beginning.x = boarder.left + 5;
@@ -278,4 +269,54 @@ void CInputBox::Check()
 	m_input[strlen(m_input)] = '|';
 	m_last_input_time = clock();
 	return;
+}
+
+void CAchievement::Create(int x, int y, const char* title, const char* context)
+{
+	m_x = x; m_y = y;
+	m_title = title;
+	m_context = context;
+	BITMAP_FILE T_bitmap;
+	T_bitmap.Load_File(".\\GUI\\Achievement\\achievement.bmp");
+	m_Surface = DDraw_Create_Surface(T_bitmap.bitmapinfoheader.biWidth, T_bitmap.bitmapinfoheader.biHeight);
+	POINT T_coor;
+	T_coor.x = T_coor.y = 0;
+	DDraw_Draw_Bitmap(&T_bitmap, m_Surface, T_coor);
+	T_bitmap.Unload_File();
+}
+
+void CAchievement::Draw() 
+{
+	RECT border;
+	border.left = m_x;
+	border.right = m_x + 325;
+	border.top = m_y; 
+	border.bottom = m_y + 55;
+	lpddsback->Blt(&border, m_Surface, NULL, DDBLT_WAIT | DDBLT_KEYSRC, NULL);
+	HDC hdc;
+	lpddsback->GetDC(&hdc);
+	HFONT hf;
+	LOGFONT lf;
+	lf.lfHeight = 20;
+	lf.lfWidth = 10;
+	lf.lfEscapement = 0;
+	lf.lfUnderline = false;
+	lf.lfStrikeOut = false;
+	lf.lfOrientation = 0;
+	lf.lfWeight = 1000;
+	lf.lfItalic = false;
+	lf.lfCharSet = 0;
+	lf.lfQuality = 0;
+	lf.lfClipPrecision = 0;
+	lf.lfPitchAndFamily = 0;
+	lf.lfOutPrecision = 0;
+	strcpy(lf.lfFaceName, "Comic Sans");
+	hf = CreateFontIndirect(&lf);
+	SelectObject(hdc, hf);
+	SetBkColor(hdc, RGB(0, 0, 0));
+	//SetBkMode(hdc, TRANSPARENT);
+	SetTextColor(hdc, RGB(255, 255, 255));
+	TextOut(hdc, m_x + 60, m_y + 5, m_title.c_str(), m_title.size());
+	TextOut(hdc, m_x + 60, m_y + 25, m_context.c_str(), m_context.size());
+	lpddsback->ReleaseDC(hdc);
 }
