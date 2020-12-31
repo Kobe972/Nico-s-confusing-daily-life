@@ -1,4 +1,5 @@
 #include"CPlayer.h"
+#pragma comment(lib, "Ws2_32.lib")
 using namespace std;
 CPlayer player[20];
 SOCKET serverSocket;
@@ -12,7 +13,9 @@ void Log(char* name, char* passwd,int ID); //palyer[ID]登录
 void Reg(char* name, char* passwd,int ID); //player[ID]注册，之前它是游客，不能参与正式游戏
 void Send_Map();//注意只是将消息加入队列，并不发送
 void Process(Msg message,int src); //处理消息
+void Show_IP(); //打印IP地址
 int state=0;//0表示等待玩家加入游戏，1表示已经开始游戏
+const int g_cnt[3] = { 10, 6, 9 };
 clock_t clk;
 class MsgList
 {
@@ -24,6 +27,7 @@ public:
 } msglist;
 int main()
 {
+	srand(time(0));
 	int mode = 1;
 	clk = clock();
 	sockaddr_in addrSrv;
@@ -40,6 +44,7 @@ int main()
 	while (1)
 	{
 		system("cls");
+		Show_IP();
 		for (int i = 0; i < 20; i++) //依次检测每个玩家，看是否连接
 		{
 			player[i].check();
@@ -158,7 +163,7 @@ void WaitForJoining()
 		clk = clock();
 	}
 	waiting_num_pre = waiting_num;
-	if (clock() - clk < 30000) return; //未到时
+	if (clock() - clk < 15000) return; //未到时
 	if (waiting_num <= 1) return; //人太少
 	//如果运行到这，说明游戏可以开始了
 	state = 1;//游戏模式
@@ -293,7 +298,20 @@ void Reg(char* name, char* passwd, int ID)
 
 void Send_Map()
 {
+	Msg mes;
+	mes.ID = MAPMSG;
+	mes.num = 10;
+	for (int i = 0; i < 10; ++i) {
+		mes.string1[i] = rand() % 3 + 1;
+		mes.string2[i] = rand() % g_cnt[mes.string1[i] - 1] + 1;
+	}
+	for (int i = 0; i < 20; ++i) {
+		if (player[i].connected)
+			msglist.add(mes, i);
+	}
+	return;
 }
+
 
 void Process(Msg message, int src)
 {
@@ -310,7 +328,15 @@ void Process(Msg message, int src)
 		player[src].state = LOBBY;
 		Set_GPA(src, player[src].GPA);
 		Write_GPA(src, player[src].GPA);
-		if (Get_SurvNum() == 0) state = 0;//检查是否人已死光
+		if (Get_SurvNum() == 0)//检查是否人已死光
+		{
+			state = 0;
+			mes.ID = END_GAME;
+			for (int i = 0; i < 20; i++)
+			{
+				if (player[i].connected) msglist.add(mes, i);
+			}
+		}
 		//向所有玩家发送绩点信息
 		mes.ID = RANK_ITEM;
 		mes.num = message.num;
@@ -332,4 +358,26 @@ void Process(Msg message, int src)
 	default:
 		break;
 	}
+}
+
+void Show_IP()
+{
+	char ip4[20];
+	// 获得本机主机名
+	char hostname[MAX_PATH];
+	memset(hostname, 0, MAX_PATH);
+	gethostname(hostname, MAX_PATH);
+	struct hostent FAR* lpHostEnt = gethostbyname(hostname);
+	if (lpHostEnt == NULL)
+	{
+		return;
+	}
+	// 取得IP地址列表中的第一个为返回的IP, 即有线网卡IP(因为一台主机可能会绑定多个IP)
+	LPSTR lpAddr = lpHostEnt->h_addr_list[0];
+	// 将IP地址转化成字符串形式
+	struct in_addr inAddr;
+	memmove(&inAddr, lpAddr, 4);
+	strcpy(ip4, inet_ntoa(inAddr));
+	printf("IP address:%s\n", ip4);
+	return;
 }

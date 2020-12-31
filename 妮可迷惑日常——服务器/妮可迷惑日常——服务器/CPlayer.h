@@ -27,8 +27,8 @@ struct Msg
 {
 	int ID=0;
 	int num=0;
-	char string1[50] = { 0 };
-	char string2[50] = { 0 };
+	char string1[50] = "?";
+	char string2[50] = "?";
 };
 void MsgToString(Msg message, char* ans);//把Msg型数据表示成字符串格式，以便发送
 void StringToMsg(Msg* message, char* str);//把字符串解码回Msg型数据格式
