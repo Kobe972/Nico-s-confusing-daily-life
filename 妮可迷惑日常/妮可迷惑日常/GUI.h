@@ -56,6 +56,7 @@
 //inputbox ID
 #define IHARDSHIPBOX 0
 #define IMATH_ANSBOX 1//used in math test
+#define IPASSWORD 2
 class CButton : CGameEntry
 {
 public:
@@ -95,7 +96,8 @@ public:
 class CInputBox : CGameEntry
 {
 public:
-	void Create(int ID, int width, int height, int x, int y, bool password);
+	void Create(int ID, int width, int height, int x, int y, bool password); 
+	void Load(char* buf);
 	bool m_password;
 	RECT boarder; //边界
 	int m_Width, m_Height;
@@ -108,6 +110,17 @@ public:
 public:
 	void Draw();
 	void Check();
+};
+
+class CFont
+{
+public:
+	CFont();
+	HDC hdc;
+	HFONT hf;
+	LOGFONT lf;
+	void SetType(int height, int width, int weight);
+	void Uself();
 };
 
 class CAchievement : CGameEntry

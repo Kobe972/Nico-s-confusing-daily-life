@@ -5,8 +5,13 @@ extern CInputBox inputbox[5];
 extern CAchievement achievement[50];
 extern CStaticObstacle staticobstacle[20];
 extern CMovingObstacle movingobstacle[20];
+
+std::string g_ServeID;
+extern std::queue<Msg>g_Send, g_Recv; //队列中的消息
+extern SOCKET g_connSocket;
+
 EXTERN_INPUT_DATA()
-Clock gametime;
+Clock g_gametime, g_connecttime;
 Save g_local, g_last;
 bool g_IsSilent = false;
 std::string g_filename[15] = {
@@ -28,7 +33,7 @@ inline void CGame::SetWindowHandle(HWND hwnd)
 void CGame::GameInit()
 {
     SetGameState(PREFACE);
-    //SetGameState(STATISTICSCOUNT);
+    //SetGameState(WAITTOEND);
     //load buttons in main menu
     button[ISINGLE_MODE].Create(ISINGLE_MODE, 271, 63, 250, 160, "button1");
     button[IMULTIMODE].Create(IMULTIMODE, 271, 63, 250, 243, "button2");
@@ -47,12 +52,14 @@ void CGame::GameInit()
     button[IOK_SELECTHARDSHIP].Create(IOK_SELECTHARDSHIP, 152, 63, 590, 500, "OK_SelectHardship");
     button[IACHIEVEMENT].Create(IACHIEVEMENT, 128, 256, 600, 350, "achievement");
     button[IOK_MATH_TEST].Create(IOK_MATH_TEST, 152, 63, 590, 500, "OK_SelectHardship");
+    button[ISEE_RANKS].Create(ISEE_RANKS, 113, 28, 670, 30, "RANK");
 
     checkbox[JSILENCE].Create(JSILENCE, JSILENCE_WIDTH, JSILENCE_HEIGHT,
         JSILENCE_X, JSILENCE_Y, "silence", CSTATEOFF);
 
     inputbox[IHARDSHIPBOX].Create(IHARDSHIPBOX, 250, 25, 80, 250, false);
     inputbox[IMATH_ANSBOX].Create(IMATH_ANSBOX, 250, 25, 80, 370, false);
+    inputbox[IPASSWORD].Create(IPASSWORD, 250, 25, 80, 350, true);
 
     achievement[ACJUANWANG].Create(50, 100, "the king of JUAN", "You are really 'JUAN'!");
     achievement[ACSTOP].Create(50, 160, "don't force to JUAN", "I said stop stop!");
@@ -87,13 +94,22 @@ void CGame::GameInit()
     DInput_Init_Mouse();
     m_connected = 0;
     m_loggedin = 0;
+    m_GPA = 0;
+
+    Msg mes;
+    int mode = 1;
+    int len = sizeof(SOCKADDR);
+    WSADATA wsadata;
+    WSAStartup(MAKEWORD(2, 2), &wsadata);
+    g_connSocket = socket(AF_INET, SOCK_STREAM, 0);
+    ioctlsocket(g_connSocket, FIONBIO, (u_long FAR*) & mode);
 
     CSaveTools::LoadSave(g_local);
     g_last = g_local;
 }
 void CGame::GameMain()
 {
-    gametime.Start_Clock();
+    g_gametime.Start_Clock();
     switch (m_eGameState)
     {
     case PREFACE:
@@ -114,8 +130,8 @@ void CGame::GameMain()
     case ACHIEVEMENT:
         Achievement();
         break;
-    case LOG:
-        ConnectToServ();
+    case LOGIN:
+        Login();
         break;
     case REGISTRY:
         Reg();
@@ -141,6 +157,24 @@ void CGame::GameMain()
     case STATISTICSCOUNT:
         Statisticscount();
         break;
+    case CONNECTTOSERVE:
+        ConnectToServ();
+        break;
+    case WAITTOCONNECT:
+        WaitToConnect();
+        break;
+    case MULTIPLAYER:
+        MultiPlayer();
+        break;
+    case WAITTOEND:
+        WaitToEnd();
+        break;
+    case SEE_RANKS:
+        ShowRank();
+        break;
+    case MULTIEND:
+        MultiEnd();
+        break;
     default:
         break;
     }
@@ -152,10 +186,12 @@ void CGame::GameMain()
         ProcessButtonMsg();
         ProcessCheckBoxMsg();
         ProcessKeyMsg();
+        ProcessSerMessage();
     }
 
-    gametime.Wait_Clock(14);
+    g_gametime.Wait_Clock(14);
 }
+
 void CGame::Preface()
 {
     static BOB pref[2];
@@ -215,11 +251,7 @@ void CGame::Preface()
         counter = frame = 200;
     t_clock.Wait_Clock(30);
 }
-void CGame::ConnectToServ()
-{
-    MessageBox(NULL, "Function not defined", "Attention", MB_OK);
-    return;
-}
+
 void CGame::GetCurMsg()
 {
     GetCursorPos(&pos);
@@ -227,6 +259,16 @@ void CGame::GetCurMsg()
     DInput_Read_Mouse();
     DInput_Read_Keyboard();
     return;
+}
+
+bool CGame::ButtonReturn() {
+    button[IRETURN].Check();
+    if (button[IRETURN].m_state == BSTATEUP) {
+        if (!g_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
+        button[IRETURN].m_state = BSTATENORMAL;
+        return true;
+    }
+    return false;
 }
 
 void CGame::ProcessButtonMsg()
@@ -243,10 +285,17 @@ void CGame::ProcessButtonMsg()
                 switch (i)
                 {
                 case ISINGLE_MODE:m_IsSingle = true; m_eGameState = SELECT_SKIN; break;
-                case IMULTIMODE:m_IsSingle = false; m_eGameState = SELECT_SKIN; break;
+                case IMULTIMODE:
+                    if (!m_loggedin)
+                        m_eGameState = LOGIN;
+                    else {
+                        m_IsSingle = false; 
+                        m_eGameState = SELECT_SKIN;
+                    }
+                    break;
                 case ISETTINGS:m_eGameState = SETTINGS; break;
                 case IHELP:m_eGameState = HELP; break;
-                case ILOG:m_eGameState = LOG; break;
+                case ILOG:m_eGameState = LOGIN; break;
                 case IACHIEVEMENT:m_eGameState = ACHIEVEMENT; break;
                 case IREGISTRY:m_eGameState = REGISTRY; break;
                 default:
@@ -255,38 +304,35 @@ void CGame::ProcessButtonMsg()
                 button[i].m_state = BSTATENORMAL;
             }
         }
+        if (m_loggedin)
+        {
+            button[ISEE_RANKS].Check();
+            if (button[ISEE_RANKS].m_state == BSTATEUP)
+            {
+                Msg clr;
+                clr.ID = RANK_RQ;
+                g_Send.push(clr);
+                if (!g_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
+                SetGameState(SHOW_RANK);
+                button[ISEE_RANKS].m_state = BSTATENORMAL;
+            }
+        }
         break;
     case SETTINGS:
-        button[IRETURN].Check();
-        if (button[IRETURN].m_state == BSTATEUP) {
-            if (!g_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
+        if (ButtonReturn())
             m_eGameState = MAINMENU;
-            button[IRETURN].m_state = BSTATENORMAL;
-        }
         break;
     case HELP:
-        button[IRETURN].Check();
-        if (button[IRETURN].m_state == BSTATEUP) {
-            if (!g_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
-            m_eGameState = MAINMENU;
-            button[IRETURN].m_state = BSTATENORMAL;
-        }
+        if (ButtonReturn())
+            SetGameState(MAINMENU);
         break;
     case ACHIEVEMENT:
-        button[IRETURN].Check();
-        if (button[IRETURN].m_state == BSTATEUP) {
-            if (!g_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
-            m_eGameState = MAINMENU;
-            button[IRETURN].m_state = BSTATENORMAL;
-        }
+        if (ButtonReturn())
+            SetGameState(MAINMENU);
         break;
     case STATISTICSCOUNT:
-        button[IRETURN].Check();
-        if (button[IRETURN].m_state == BSTATEUP) {
-            if (!g_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
-            m_eGameState = MAINMENU;
-            button[IRETURN].m_state = BSTATENORMAL;
-        }
+        if (ButtonReturn())
+            SetGameState(MAINMENU);
         break;
     case SELECT_SKIN:
         for (int i = IPETERSKIN; i <= ICWKSKIN; i++)
@@ -299,7 +345,18 @@ void CGame::ProcessButtonMsg()
                 m_player.Create(SkinFrameNumber[T_PlayerSkin]);
                 m_player.LoadSkinFrame(T_PlayerSkin, SkinRunningNumber[T_PlayerSkin], SkinAirHikingNumber[T_PlayerSkin]);
                 if (m_IsSingle) SetGameState(SELECT_HARDNESS);
-                else SetGameState(WAITOTHERS);
+                else {
+                    if (!m_connected)
+                        SetGameState(CONNECTTOSERVE);
+                    else {
+                        mciSendString("stop .\\sound\\bgmusic\\1.mp3", NULL, 0, NULL);
+                        mciSendString("stop .\\sound\\bgmusic\\0.mp3", NULL, 0, NULL);
+                        Msg Tmessage;
+                        Tmessage.ID = JOIN;
+                        g_Send.push(Tmessage);
+                        SetGameState(WAITOTHERS);
+                    }
+                }
                 button[i].m_state = BSTATENORMAL;
             }
         }
@@ -315,8 +372,91 @@ void CGame::ProcessButtonMsg()
             button[IOK_SELECTHARDSHIP].m_state = BSTATENORMAL;
             mciSendString("stop .\\sound\\bgmusic\\1.mp3", NULL, 0, NULL);
             mciSendString("stop .\\sound\\bgmusic\\0.mp3", NULL, 0, NULL);
+
+            memset(inputbox[IHARDSHIPBOX].m_input, 0, sizeof(inputbox[IHARDSHIPBOX].m_input));
+            inputbox[IHARDSHIPBOX].m_input[0] = '|';
         }
         break;
+    case CONNECTTOSERVE:
+        button[IOK_SELECTHARDSHIP].Check();
+        if (button[IOK_SELECTHARDSHIP].m_state == BSTATEUP)
+        {
+            if (!g_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
+            g_ServeID = inputbox[IHARDSHIPBOX].m_input;
+            g_ServeID = g_ServeID.substr(0, g_ServeID.size() - 1);
+
+            SetGameState(WAITTOCONNECT);
+            g_connecttime.Start_Clock();
+            button[IOK_SELECTHARDSHIP].m_state = BSTATENORMAL;
+
+            memset(inputbox[IHARDSHIPBOX].m_input, 0, sizeof(inputbox[IHARDSHIPBOX].m_input));
+            inputbox[IHARDSHIPBOX].m_input[0] = '|';
+        }
+        if (ButtonReturn()) {
+            memset(inputbox[IHARDSHIPBOX].m_input, 0, sizeof(inputbox[IHARDSHIPBOX].m_input));
+            inputbox[IHARDSHIPBOX].m_input[0] = '|';
+            SetGameState(MAINMENU);
+        }
+        break;
+    case WAITTOCONNECT:
+        if (ButtonReturn())
+            SetGameState(CONNECTTOSERVE);
+    case LOGIN:
+        button[IOK_SELECTHARDSHIP].Check();
+        if (button[IOK_SELECTHARDSHIP].m_state == BSTATEUP)
+        {
+            if (!g_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
+            Msg Tmessage;
+            Tmessage.ID = LOG;
+            inputbox[IHARDSHIPBOX].Load(Tmessage.string1);
+            inputbox[IPASSWORD].Load(Tmessage.string2);
+            g_Send.push(Tmessage);
+            m_username = Tmessage.string1;
+            button[IOK_SELECTHARDSHIP].m_state = BSTATENORMAL;
+        }
+        if (ButtonReturn()) {
+            memset(inputbox[IHARDSHIPBOX].m_input, 0, sizeof(inputbox[IHARDSHIPBOX].m_input));
+            memset(inputbox[IPASSWORD].m_input, 0, sizeof(inputbox[IPASSWORD].m_input));
+            inputbox[IHARDSHIPBOX].m_input[0] = '|';
+            inputbox[IPASSWORD].m_input[0] = '|';
+            SetGameState(MAINMENU);
+        }
+        break;
+    case REGISTRY:
+        button[IOK_SELECTHARDSHIP].Check();
+        if (button[IOK_SELECTHARDSHIP].m_state == BSTATEUP)
+        {
+            if (!g_IsSilent) mciSendString("play .\\sound\\click\\0.wav", NULL, 0, NULL);
+            Msg Tmessage;
+            Tmessage.ID = REG;
+            inputbox[IHARDSHIPBOX].Load(Tmessage.string1);
+            inputbox[IPASSWORD].Load(Tmessage.string2);
+            memset(inputbox[IHARDSHIPBOX].m_input, 0, sizeof(inputbox[IHARDSHIPBOX].m_input));
+            memset(inputbox[IPASSWORD].m_input, 0, sizeof(inputbox[IPASSWORD].m_input));
+            inputbox[IHARDSHIPBOX].m_input[0] = '|';
+            inputbox[IPASSWORD].m_input[0] = '|';
+            g_Send.push(Tmessage);
+            button[IOK_SELECTHARDSHIP].m_state = BSTATENORMAL;
+        }
+        if (ButtonReturn()) {
+            memset(inputbox[IHARDSHIPBOX].m_input, 0, sizeof(inputbox[IHARDSHIPBOX].m_input));
+            memset(inputbox[IPASSWORD].m_input, 0, sizeof(inputbox[IPASSWORD].m_input));
+            inputbox[IHARDSHIPBOX].m_input[0] = '|';
+            inputbox[IPASSWORD].m_input[0] = '|';
+            SetGameState(MAINMENU);
+        }
+        break;
+    case SEE_RANKS:
+        if (ButtonReturn())
+            SetGameState(MAINMENU);
+    case MULTIEND:
+        if (ButtonReturn())
+        {
+            int Tcur = rand() % 2;
+            mciSendString(("play .\\sound\\bgmusic\\" + std::to_string(Tcur) + ".mp3 repeat").c_str(),
+                NULL, 0, NULL);
+            SetGameState(MAINMENU);
+        }
     default:
         break;
     }
@@ -343,6 +483,17 @@ void CGame::ProcessKeyMsg()
     case SELECT_HARDNESS:
         inputbox[IHARDSHIPBOX].Check();
         break;
+    case CONNECTTOSERVE:
+        inputbox[IHARDSHIPBOX].Check();
+        break;
+    case REGISTRY:
+        inputbox[IHARDSHIPBOX].Check();
+        inputbox[IPASSWORD].Check();
+        break;
+    case LOGIN:
+        inputbox[IHARDSHIPBOX].Check();
+        inputbox[IPASSWORD].Check();
+        break;
     default:
         break;
     }
@@ -357,6 +508,10 @@ void CGame::ShowMenu()
     bitmap->Unload_File();
     for (int i = ISINGLE_MODE; i <= IREGISTRY; i++) button[i].Draw();
     button[IACHIEVEMENT].Draw();
+    if (m_loggedin)
+    {
+        button[ISEE_RANKS].Draw();
+    }
     if (g_IsSilent && firststop) {
         mciSendString("stop .\\sound\\bgmusic\\1.mp3", NULL, 0, NULL);
         mciSendString("stop .\\sound\\bgmusic\\0.mp3", NULL, 0, NULL);
@@ -367,9 +522,87 @@ void CGame::ShowMenu()
         mciSendString(("play .\\sound\\bgmusic\\" + std::to_string(Tcur) + ".mp3 repeat").c_str(), 
             NULL, 0, NULL);
         firstopen = false; firststop = true;
-
     }
+
+    if (m_connected) {
+        CFont TCurText;
+        lpddsback->GetDC(&TCurText.hdc);
+        TCurText.SetType(20, 10, 500);
+        TCurText.Uself();
+        SetBkMode(TCurText.hdc, TRANSPARENT);
+        SetTextColor(TCurText.hdc, RGB(0, 0, 0));
+        if (m_loggedin) {
+            std::string TCur = "Username:" + m_username;
+            TextOut(TCurText.hdc, 0, 0, TCur.c_str(), TCur.size());
+            TCur = "GPA:" + std::to_string((double)m_GPA / 100.00);
+            int pos = TCur.find(".");
+            TextOut(TCurText.hdc, 0, 20, TCur.c_str(), pos + 3);
+        }
+        else TextOut(TCurText.hdc, 0, 0, "Tourist", 7);
+        lpddsback->ReleaseDC(TCurText.hdc);
+    }
+
     return;
+}
+
+void CGame::ShowRank()
+{
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    bitmap->Load_File(".\\background\\rank.bmp");
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
+    if (!m_ranklist.empty())
+    {
+        char out[100], tmp[100];
+        double gpa;
+        CFont CurText;
+        lpddsback->GetDC(&CurText.hdc);
+        CurText.SetType(40, 17, 1000);
+        CurText.Uself();
+        SetTextColor(CurText.hdc, RGB(0, 0, 0));
+        SetBkMode(CurText.hdc, TRANSPARENT);
+        for (int i = 0; i < m_ranklist.size(); i++)
+        {
+            gpa = (double)m_ranklist[i].gpa / 100.00;
+            sprintf(out, "%d        %s        %.2f", i + 1, m_ranklist[i].name, gpa);
+            TextOut(CurText.hdc, 170, 115 + 40 * (i + 1), out, strlen(out));
+        }
+        lpddsback->ReleaseDC(CurText.hdc);
+    }
+    button[IRETURN].Draw();
+}
+
+bool comp(RankList A, RankList B) {
+    return A.gpa > B.gpa;
+}
+
+void CGame::MultiEnd()
+{
+    static int first = 1;
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    bitmap->Load_File(".\\background\\rank.bmp");
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
+    if (!m_ranklist.empty())
+    {
+        std::sort(m_ranklist.begin(), m_ranklist.end(), comp);
+        char out[100], tmp[100];
+        double gpa;
+        CFont CurText;
+        lpddsback->GetDC(&CurText.hdc);
+        CurText.SetType(40, 17, 1000);
+        CurText.Uself();
+        SetTextColor(CurText.hdc, RGB(0, 0, 0));
+        SetBkMode(CurText.hdc, TRANSPARENT);
+        for (int i = 0; i < m_ranklist.size(); i++)
+        {
+            gpa = (double)m_ranklist[i].gpa / 100.00;
+            sprintf(out, "%d        %s        %.2f", i + 1, m_ranklist[i].name, gpa);
+            TextOut(CurText.hdc, 170, 115 + 40 * (i + 1), out, strlen(out));
+        }
+        lpddsback->ReleaseDC(CurText.hdc);
+    }
+    button[IRETURN].Draw();
 }
 
 void RENEWSAVE() 
@@ -459,11 +692,86 @@ void CGame::SinglePlayer()
     return;
 }
 
+
+void CGame::MultiPlayer()
+{
+    static int first = 1, T_cur, T_background = rand() % 4;
+    if (first && !g_IsSilent) {
+        T_cur = rand() % 3;
+        mciSendString(
+            ("play .\\sound\\GamePlaying\\bgsound\\" + std::to_string(T_cur) + ".mp3 repeat").c_str(),
+            NULL, 0, NULL);
+        first = false;
+    }
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    bitmap->Load_File((".\\background\\PlayingBackground" + std::to_string(T_background) + ".bmp").c_str());
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
+
+    char buf[50];
+    memcpy(buf, m_LastDie.c_str(), sizeof(buf));
+    Draw_Text_GDI(buf, 0, 0, RGB(0, 0, 0), lpddsback);
+
+    if (!m_map.MoveNext())
+    {
+        mciSendString(
+            ("stop .\\sound\\GamePlaying\\bgsound\\" + std::to_string(T_cur) + ".mp3").c_str(),
+            NULL, 0, NULL);
+        first = true;
+        m_state = true;
+        SetGameState(WAITTOEND);
+        return;
+    }
+    m_map.Draw(m_player.m_HP / 10);
+    m_player.GetUnder(m_map.m_CurBarrier, m_map.m_CurSafe, m_map.m_BarrierNumber);
+    m_player.MoveNext();
+    m_player.Draw();
+    DDraw_Flip();
+    if (!m_player.LogicRun(m_map.m_CurBarrier, m_map.m_CurSafe, m_map.m_BarrierNumber))
+        SetGameState(WAITTOEND);
+    int THPReduce = m_map.Fix();
+    m_player.m_HP -= THPReduce;
+    if (THPReduce > 0) {
+        if (!g_IsSilent)
+            mciSendString("play .\\sound\\GamePlaying\\hitted\\0.wav", NULL, 0, NULL);
+    }
+    if (m_player.m_HP < 0)
+        SetGameState(WAITTOEND);
+    if (m_player.m_HP > 150)
+        SetGameState(WAITTOEND);
+    if (m_eGameState != MULTIPLAYER) {
+        m_state = false;
+        Msg Tmessage;
+        Tmessage.ID = END_GAME;
+        double score;
+        score = pow((double)(m_map.m_Right * 100 / m_map.m_Length),0.333333)*31.7;
+        score = pow(score, 0.5) * 10;
+        if (score >= 95) Tmessage.num = 430;
+        else if (score >= 90) Tmessage.num = 400;
+        else if (score >= 85) Tmessage.num = 370;
+        else if (score >= 82) Tmessage.num = 330;
+        else if (score >= 78) Tmessage.num = 300;
+        else if (score >= 75) Tmessage.num = 270;
+        else if (score >= 72) Tmessage.num = 230;
+        else if (score >= 68) Tmessage.num = 200;
+        else if (score >= 65) Tmessage.num = 170;
+        else if (score >= 64) Tmessage.num = 150;
+        else if (score >= 61) Tmessage.num = 130;
+        else if (score >= 60) Tmessage.num = 100;
+        else Tmessage.num = 0;
+        g_Send.push(Tmessage);
+        mciSendString(
+            ("stop .\\sound\\GamePlaying\\bgsound\\" + std::to_string(T_cur) + ".mp3").c_str(),
+            NULL, 0, NULL);
+        first = true;
+    }
+    return;
+}
+
 void CGame::SingleFailure()
 {
     static bool next_available = true;//prevent from overacting to button messages
     static int first = 1;//first time to play music
-    srand((unsigned)time(NULL));
     if (mouse_state.rgbButtons[MOUSE_LEFT_BUTTON] & 0x80 && next_available)
     {
         m_postlude_frame++;
@@ -554,12 +862,6 @@ void CGame::SingleSuccess()
     }
 }
 
-void CGame::MultiPlayer()
-{
-    MessageBox(NULL, "Function not defined", "Attention", MB_OK);
-    return;
-}
-
 void CGame::Help()
 {
     BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
@@ -578,7 +880,9 @@ void CGame::Achievement()
     DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
     bitmap->Unload_File();
     button[IRETURN].Draw();
-
+    for (int i = 0; i <= 12; ++i)
+        if (g_local.bAchievements[i])
+            achievement[i].Draw();
     return;
 }
 
@@ -599,39 +903,21 @@ void CGame::Statisticscount() {
     lpddsback->Blt(&border, button[m_player.m_PlayerSkin + IPETERSKIN].m_ButtonSur[0], 
         NULL, DDBLT_WAIT | DDBLT_KEYSRC, NULL);
     
+    CFont TCurText;
+    lpddsback->GetDC(&TCurText.hdc);
+    TCurText.SetType(40, 15, 500);
+    TCurText.Uself();
+    SetBkMode(TCurText.hdc, TRANSPARENT);
+    SetTextColor(TCurText.hdc, RGB(0, 0, 0));
+    std::string Tcur = "You Have Runned:"; 
+    TextOut(TCurText.hdc, 400, 200, Tcur.c_str(), Tcur.size());
 
-    HDC hdc;
-    lpddsback->GetDC(&hdc);
-    HFONT hf;
-    LOGFONT lf;
-    lf.lfHeight = 40;
-    lf.lfWidth = 20;
-    lf.lfEscapement = 0;
-    lf.lfUnderline = false;
-    lf.lfStrikeOut = false;
-    lf.lfOrientation = 0;
-    lf.lfWeight = 500;
-    lf.lfItalic = false;
-    lf.lfCharSet = 0;
-    lf.lfQuality = 0;
-    lf.lfClipPrecision = 0;
-    lf.lfPitchAndFamily = 0;
-    lf.lfOutPrecision = 0;
-    strcpy(lf.lfFaceName, "Comic Sans");
-    hf = CreateFontIndirect(&lf);
-    SelectObject(hdc, hf);
-    SetBkMode(hdc, TRANSPARENT);
-    SetTextColor(hdc, RGB(0, 0, 0));
-    std::string Tcur = "You Have Run:"; 
-    TextOut(hdc, 400, 200, Tcur.c_str(), Tcur.size());
     Tcur = std::to_string(m_map.m_Right / 50) + "m!";;
-    LOGFONT nlf = lf;
-    nlf.lfWeight = 200; nlf.lfHeight = 80;
-    hf = CreateFontIndirect(&nlf);
-    SelectObject(hdc, hf);
-    SetTextColor(hdc, RGB(255, 0, 0));
-    TextOut(hdc, 400, 250, Tcur.c_str(), Tcur.size());
-    lpddsback->ReleaseDC(hdc);
+    TCurText.SetType(150, 50, 500);
+    TCurText.Uself();
+    SetTextColor(TCurText.hdc, RGB(255, 0, 0));
+    TextOut(TCurText.hdc, 400, 250, Tcur.c_str(), Tcur.size());
+    lpddsback->ReleaseDC(TCurText.hdc);
     bool flag = false;
     for (int i = 0; i <= 12; ++i)
         if (g_local.bAchievements[i] != g_last.bAchievements[i])
@@ -641,6 +927,42 @@ void CGame::Statisticscount() {
         DDraw_Draw_Bitmap(bitmap, lpddsback, { 400, 400});
         bitmap->Unload_File();
     }
+}
+
+void CGame::WaitToEnd()
+{
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    bitmap->Load_File(".\\background\\GameOver.bmp");
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
+    RECT border;
+    border.top = 150;
+    border.bottom = 550;
+    border.left = 50;
+    border.right = 350;
+    lpddsback->Blt(&border, button[m_player.m_PlayerSkin + IPETERSKIN].m_ButtonSur[0],
+        NULL, DDBLT_WAIT | DDBLT_KEYSRC, NULL);
+
+    CFont TCurText;
+    lpddsback->GetDC(&TCurText.hdc);
+    TCurText.SetType(40, 15, 500);
+    TCurText.Uself();
+    SetBkMode(TCurText.hdc, TRANSPARENT);
+    SetTextColor(TCurText.hdc, RGB(0, 0, 0));
+    std::string Tcur = "You Have Runned:";
+    TextOut(TCurText.hdc, 400, 200, Tcur.c_str(), Tcur.size());
+
+    Tcur = "Please wait till others";
+    TextOut(TCurText.hdc, 400, 400, Tcur.c_str(), Tcur.size());
+    Tcur = "end the game";
+    TextOut(TCurText.hdc, 400, 450, Tcur.c_str(), Tcur.size());
+
+    Tcur = std::to_string(m_map.m_Right / 50) + "m!";;
+    TCurText.SetType(150, 50, 500);
+    TCurText.Uself();
+    SetTextColor(TCurText.hdc, RGB(255, 0, 0));
+    TextOut(TCurText.hdc, 400, 250, Tcur.c_str(), Tcur.size());
+    lpddsback->ReleaseDC(TCurText.hdc);
 }
 
 void CGame::Settings()
@@ -692,20 +1014,43 @@ void CGame::SelectHardship()
 
 void CGame::Login()
 {
-    MessageBox(NULL, "Function not defined", "Attention", MB_OK);
+    if (!m_connected) {
+        SetGameState(CONNECTTOSERVE);
+        return;
+    }
+
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    bitmap->Load_File(".\\background\\login.bmp"); //wait for load
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
+    button[IOK_SELECTHARDSHIP].Draw();
+    inputbox[IHARDSHIPBOX].Draw();
+    inputbox[IPASSWORD].Draw();
+    button[IRETURN].Draw();
     return;
 }
 
 void CGame::Reg()
 {
-    MessageBox(NULL, "Function not defined", "Attention", MB_OK);
+    if (!m_connected) {
+        m_eGameState = eGameStateConnectToServ;
+        return;
+    }
+
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    bitmap->Load_File(".\\background\\registry.bmp"); //wait for load
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
+    button[IOK_SELECTHARDSHIP].Draw();
+    inputbox[IHARDSHIPBOX].Draw();
+    inputbox[IPASSWORD].Draw();
+    button[IRETURN].Draw();
     return;
 }
 
 void CGame::Prelude()
 {
     static bool next_available = true;//prevent from overacting to button messages
-    srand((unsigned)time(NULL));
     if (m_prelude_ID == -1)
     {
         m_prelude_ID = rand() % 5;
@@ -758,15 +1103,146 @@ void CGame::Prelude()
 
 void CGame::WaitOthers()
 {
-    MessageBox(NULL, "Function WaitOthers() not developed!", "Attention", MB_OK);
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    bitmap->Load_File(".\\background\\WaitOthers.bmp"); //wait for load
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
     return;
 }
+
+void CGame::ConnectToServ()
+{
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    bitmap->Load_File(".\\background\\ConnectToServ.bmp"); //wait for load
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
+    button[IOK_SELECTHARDSHIP].Draw();
+    inputbox[IHARDSHIPBOX].Draw();
+    button[IRETURN].Draw();
+    return;
+}
+
+void CGame::WaitToConnect()
+{
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE;
+    bitmap->Load_File(".\\background\\WaitToConnect.bmp"); //wait for load
+    DDraw_Draw_Bitmap(bitmap, lpddsback, { 0,0 });
+    bitmap->Unload_File();
+    button[IRETURN].Draw();
+
+    sockaddr_in addrSrv;
+    addrSrv.sin_addr.S_un.S_addr = inet_addr(g_ServeID.c_str());
+    addrSrv.sin_family = AF_INET;
+    addrSrv.sin_port = htons(8000);
+    if (connect(g_connSocket, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR)) != SOCKET_ERROR)
+    {
+        m_connected = true;
+        MessageBox(NULL, "Connect Successfully", "Attention", MB_OK);
+        CreateThread(NULL, 0, CreateCilent, 0, 0, NULL);
+        SetGameState(MAINMENU);
+        return;
+    }
+    else
+    {
+        int err = WSAGetLastError();
+        if (err == WSAEISCONN)
+        {
+            m_connected = true;
+            MessageBox(NULL, "Connect Successfully", "Attention", MB_OK);
+            CreateThread(NULL, 0, CreateCilent, 0, 0, NULL);
+            SetGameState(MAINMENU);
+            return;
+        }
+    }
+    int TCurTime = g_connecttime.Get_Time();
+    if (TCurTime >= 30) {
+        MessageBox(NULL, "Connection Time Limit Exceeded!", "Attention", MB_OK);
+        SetGameState(CONNECTTOSERVE);
+    }
+    
+    std::string TContext1 = "The Ip You are trying to connect is:";
+    std::string TContext2 = g_ServeID;
+    std::string TContext3 = "You have been waitting for: " + std::to_string(TCurTime) + "s";
+    CFont TCurText;
+    lpddsback->GetDC(&TCurText.hdc);
+    TCurText.SetType(50, 20, 500);
+    TCurText.Uself();
+    SetBkMode(TCurText.hdc, TRANSPARENT);
+    SetTextColor(TCurText.hdc, RGB(0, 0, 0));
+    TextOut(TCurText.hdc, 100, 150, TContext1.c_str(), TContext1.size());
+    TextOut(TCurText.hdc, 100, 250, TContext2.c_str(), TContext2.size());
+    TextOut(TCurText.hdc, 100, 350, TContext3.c_str(), TContext3.size());
+    lpddsback->ReleaseDC(TCurText.hdc);
+    return;
+}
+
+void CGame::ProcessSerMessage()
+{
+    if (!m_connected) return;
+    for (; !g_Recv.empty();) 
+    {
+        Msg Tmessage = g_Recv.front(); g_Recv.pop();
+        switch (Tmessage.ID)
+        {
+        case SET_GPA:
+            m_GPA = Tmessage.num;
+            break;
+        case END_GAME:
+            SetGameState(MULTIEND);
+            break;
+        case RANK_ITEM:
+            Load_Rank(Tmessage.num, Tmessage.string1);
+            m_LastDie = Tmessage.string1;
+            break;
+        case CLEAR_RANK:
+            m_ranklist.clear();
+            break;
+        case LOG_RESULT:
+            m_loggedin = Tmessage.num;
+            if (Tmessage.num) {
+                MessageBox(NULL, "Log in Successfully", "Attention", MB_OK);
+                SetGameState(MAINMENU);
+            }
+            else
+                MessageBox(NULL, "Log fails", "Attention", MB_OK);
+            break;
+        case REG_RESULT:
+            if(Tmessage.num)
+                MessageBox(NULL, "Regist Successfully", "Attention", MB_OK);
+            else
+                MessageBox(NULL, "Registry fails", "Attention", MB_OK);
+            break;
+        case BEGIN_GAME:
+            SetGameState(MULTIPLAYER);
+            break;
+        case MAPMSG:
+            m_map.CreateMulti(Tmessage.num, Tmessage.string1, Tmessage.string2);
+            break;
+        case DISCONNECT:
+            MessageBox(NULL, "Disconnect with the server!", "Attention", MB_OK);
+            m_connected = m_loggedin = false;
+            SetGameState(MAINMENU);
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void CGame::Load_Rank(int gpa, char* username) {
+    RankList Tcur;
+    Tcur.gpa = gpa; 
+    strcpy(Tcur.name, username);
+    m_ranklist.push_back(Tcur);
+}
+
 CGame::~CGame()
 {
     DInput_Release_Keyboard();
     DInput_Read_Mouse();
     DInput_Shutdown();
     DDraw_Shutdown();
+
 }
 
 
@@ -1199,11 +1675,11 @@ void CGame::play_card()
         {
             if (actual_coor[i].x > coor[position[i]].x)
             {
-                actual_coor[i].x -= 20;
+                actual_coor[i].x -= 10;
             }
             if (actual_coor[i].x < coor[position[i]].x)
             {
-                actual_coor[i].x += 20;
+                actual_coor[i].x += 10;
             }
         }
     }
@@ -1458,7 +1934,7 @@ void CGame::sign_name()
 int CGame::fail_2048()
 {
     static int next = 0;
-    BITMAP_FILE_PTR bitmap = new BITMAP_FILE; SetGameState(STATISTICSCOUNT);
+    BITMAP_FILE_PTR bitmap = new BITMAP_FILE; 
     bitmap->Load_File(".\\Postlude\\2048\\game_fail\\0.bmp");
     if (mouse_state.rgbButtons[MOUSE_LEFT_BUTTON] & 0x80) next = 1;
     if (next && !(mouse_state.rgbButtons[MOUSE_LEFT_BUTTON] & 0x80))

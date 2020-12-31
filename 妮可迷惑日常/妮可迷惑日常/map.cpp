@@ -146,6 +146,28 @@ void CMap::Create(int ModelNumber, int Hardness, int SilenceLow, int SilenceHigh
 	}
 }
 
+void CMap::CreateMulti(int ModelNumber, char* Hardness, char* ModelID)
+{
+	m_Length = 0;
+	m_Left = 0;
+	m_Right = SCREEN_WIDTH;
+	m_ObstacleCounter = 0;
+	m_fieldCounter = 0;
+	m_MovingCounter = 0;
+	m_ObstacleCur = 0;
+	m_fieldCur = 0;
+	m_MovingCur = 0;
+	AddField(0, 2000, 400);
+	m_Length = 2000;
+
+	for (int i = 0; i < ModelNumber; ++i)
+	{
+		AddField(m_Length, m_Length + 800, 400);
+		m_Length += 800;
+		m_Length += (this->*m_pfnLoad_Model[Hardness[i] - 1][ModelID[i] - 1])(m_Length);
+	}
+}
+
 RECT TOABS(RECT Cur, int left) {
 	Cur.left -= left;
 	Cur.right -= left;

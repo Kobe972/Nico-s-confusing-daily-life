@@ -144,6 +144,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BobClass.cpp" />
+    <ClCompile Include="cilent.cpp" />
     <ClCompile Include="GUI.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="GameEntry.cpp" />
@@ -155,6 +156,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BobClass.h" />
+    <ClInclude Include="client.h" />
     <ClInclude Include="GUI.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="GameEntry.h" />

@@ -4,6 +4,8 @@
 #include"player.h"
 #include <Windows.h>
 #include"SaveTools.h"
+#include"client.h"
+#include<math.h>
 //then define game states
 #define PREFACE (EGameState::eGameStatePreface)
 #define MAINMENU (EGameState::eGameStateMainMenu)
@@ -12,7 +14,7 @@
 #define WAITOTHERS (EGameState::eGameStateWaitOthers)
 #define SETTINGS (EGameState::eGameStateSettings)
 #define HELP (EGameState::eGameStateHelp)
-#define LOG (EGameState::eGameStateLogin)
+#define LOGIN (EGameState::eGameStateLogin)
 #define REGISTRY (EGameState::eGameStateRegister) //the ID of the button is IREGISTRY,be aware of it
 #define SEE_RANKS (EGameState::eGameStateShowRank)
 #define PRELUDE (EGameState::eGameStatePrelude)
@@ -22,6 +24,12 @@
 #define SINGLE_PLAYER_BEGIN (EGameState::eGameStateSinglePlayer)
 #define ACHIEVEMENT (EGameState::eGameStateAchievement)
 #define STATISTICSCOUNT (EGameState::eGameStateStatisticsCount)
+#define CONNECTTOSERVE (EGameState::eGameStateConnectToServ)
+#define WAITTOCONNECT (EGameState::eGameStateWaitToConnect)
+#define MULTIPLAYER (EGameState::eGameStateMultiPlayer)
+#define MULTIEND (EGameState::eGameStateMultiEnd)
+#define WAITTOEND (EGameState::eGameStateWaitToEnd)
+#define SHOW_RANK (EGameState::eGameStateShowRank)
 
 #define ISIGN_NAME 0
 #define IMATH_TEST 1
@@ -39,6 +47,13 @@ extern CInputBox inputbox[5];
 extern CAchievement achievement[50];
 extern CStaticObstacle staticobstacle[20];
 extern CHP hp;
+
+
+struct RankList {
+	int gpa;
+	char name[50];
+};
+
 class CGame
 {
 public:
@@ -63,8 +78,6 @@ private: //game state
 private:
 	int m_RemainingOpponentCnt;//the number of remained opponents
 	int m_hardness;
-	bool m_loggedin;//whether logged in or not(1 indicates logged in,0 not)
-	int m_connected;
 	bool m_IsSingle;//if it is single player mode
 	bool m_state;
 
@@ -72,8 +85,8 @@ public:
 	enum EGameState {
 		eGameStatePreface = 0, eGameStateMainMenu = 1, eGameStateSelectSkin, eGameStateSelectHardness, eGameStateSettings, eGameStateHelp,
 		eGameStateLogin, eGameStateRegister, eGameStateShowRank, eGameStatePrelude, eGameStateSinglePlayer, eGameStateSingleFailure, eGameStateSingleSuccess,
-		eGameStateWaitOthers, eGameStateMultiPlayer, eGameStateAchievement,
-		eGameStateWaitToEnd, eGameStateStatisticsCount,
+		eGameStateWaitOthers, eGameStateMultiPlayer, eGameStateAchievement, eGameStateConnectToServ,
+		eGameStateWaitToEnd, eGameStateStatisticsCount, eGameStateMultiEnd, eGameStateWaitToConnect,
 		eGameStateCount
 	};
 	//GameState 望文生义
@@ -84,13 +97,12 @@ private:
 public:
 
 	void Preface();
-	void ConnectToServ();//connect to server
 	void GetCurMsg();
+	bool ButtonReturn();
 	void ProcessButtonMsg();//处理按钮事件
 	void ProcessCheckBoxMsg();//处理单选框事件
 	void ProcessKeyMsg();
 	void ShowMenu();
-	void EnterFrame();//绘制游戏下一帧
 	void SinglePlayer();//开始
 	void SingleFailure();
 	void SingleSuccess();
@@ -108,9 +120,20 @@ public:
 	void WaitToEnd();//双人游戏等待结束以及结束后的数据处理工作
 	void SelectSkin();
 	void SelectHardship();
-	void RecvSerMessage();//接收服务器发来的信号
-	void ProcessSerMessage(char* Msg);//处理信号
+	void ConnectToServ();
+	void WaitToConnect();
+	void MultiEnd();
+
+public: // serve and client
+	void ProcessSerMessage();//处理信号
 	void SendMsg(char* Msg);//给服务器发送信号
+	void Load_Rank(int gpa, char* username);
+private:
+	int m_GPA;
+	bool m_loggedin;//whether logged in or not(1 indicates logged in,0 not)
+	int m_connected;
+	std::vector<RankList> m_ranklist;
+	std::string m_LastDie, m_username;
 
 	//A set of functions that can set arguments.
 public:

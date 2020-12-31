@@ -98,6 +98,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd,
         // return success
         return(0);
     } break;
+    case WM_CLOSE:
+        Game_Shutdown();
+        break;
 
     default:break;
 

@@ -138,10 +138,17 @@ void CInputBox::Create(int ID, int width, int height, int x, int y, bool passwor
 	m_last_input_time = clock();
 	memset(m_input, 0, sizeof(m_input));
 	m_input[0] = '|';
+	m_password = password;
 	boarder.left = x;
 	boarder.top = y;
 	boarder.bottom = boarder.top + m_Height;
 	boarder.right = boarder.left + m_Width;
+}
+
+void CInputBox::Load(char* buf)
+{
+	memcpy(buf, m_input, sizeof(m_input));
+	buf[strlen(buf) - 1] = 0;
 }
 
 void CInputBox::Draw()
@@ -170,8 +177,10 @@ void CInputBox::Draw()
 	else
 	{
 		char buf[50];
-		for (int i = 1; i < strlen(m_input); i++) buf[i] = '*';
-		buf[strlen(m_input) - 1] = 0;
+		memset(buf, 0, sizeof(buf));
+		for (int i = 0; i < strlen(m_input); i++) buf[i] = '*';
+		if (m_activated && character) buf[strlen(buf) - 1] = '|';
+		else buf[strlen(m_input) - 1] = 0;
 		Draw_Text_GDI(buf, beginning.x, beginning.y, RGB(0, 0, 0), lpddsback);
 	}
 }
@@ -255,7 +264,7 @@ void CInputBox::Check()
 	else if ((keyboard_state[DIK_O] & 0x80) && (m_last_input != 'o' || clock() - m_last_input_time >= 300) && !(keyboard_state[DIK_LSHIFT] & 0x80 || (keyboard_state[DIK_RSHIFT] & 0x80))) { m_input[strlen(m_input) - 1] = 'o'; m_last_input = 'o'; }
 	else if ((keyboard_state[DIK_P] & 0x80) && (m_last_input != 'p' || clock() - m_last_input_time >= 300) && !(keyboard_state[DIK_LSHIFT] & 0x80 || (keyboard_state[DIK_RSHIFT] & 0x80))) { m_input[strlen(m_input) - 1] = 'p'; m_last_input = 'p'; }
 	else if ((keyboard_state[DIK_Q] & 0x80) && (m_last_input != 'q' || clock() - m_last_input_time >= 300) && !(keyboard_state[DIK_LSHIFT] & 0x80 || (keyboard_state[DIK_RSHIFT] & 0x80))) { m_input[strlen(m_input) - 1] = 'q'; m_last_input = 'q'; }
-	else if ((keyboard_state[DIK_R] & 0x80) && (m_last_input != 'r' || clock() - m_last_input_time >= 300) && !(keyboard_state[DIK_LSHIFT] & 0x80 || (keyboard_state[DIK_RSHIFT] & 0x80))) { m_input[strlen(m_input) - 1] = 'w'; m_last_input = 'r'; }
+	else if ((keyboard_state[DIK_R] & 0x80) && (m_last_input != 'r' || clock() - m_last_input_time >= 300) && !(keyboard_state[DIK_LSHIFT] & 0x80 || (keyboard_state[DIK_RSHIFT] & 0x80))) { m_input[strlen(m_input) - 1] = 'r'; m_last_input = 'r'; }
 	else if ((keyboard_state[DIK_S] & 0x80) && (m_last_input != 's' || clock() - m_last_input_time >= 300) && !(keyboard_state[DIK_LSHIFT] & 0x80 || (keyboard_state[DIK_RSHIFT] & 0x80))) { m_input[strlen(m_input) - 1] = 's'; m_last_input = 's'; }
 	else if ((keyboard_state[DIK_T] & 0x80) && (m_last_input != 't' || clock() - m_last_input_time >= 300) && !(keyboard_state[DIK_LSHIFT] & 0x80 || (keyboard_state[DIK_RSHIFT] & 0x80))) { m_input[strlen(m_input) - 1] = 't'; m_last_input = 't'; }
 	else if ((keyboard_state[DIK_U] & 0x80) && (m_last_input != 'u' || clock() - m_last_input_time >= 300) && !(keyboard_state[DIK_LSHIFT] & 0x80 || (keyboard_state[DIK_RSHIFT] & 0x80))) { m_input[strlen(m_input) - 1] = 'u'; m_last_input = 'u'; }
@@ -285,18 +294,27 @@ void CAchievement::Create(int x, int y, const char* title, const char* context)
 	T_bitmap.Unload_File();
 }
 
-void CAchievement::Draw() 
+void CAchievement::Draw()
 {
 	RECT border;
 	border.left = m_x;
 	border.right = m_x + 325;
-	border.top = m_y; 
+	border.top = m_y;
 	border.bottom = m_y + 55;
 	lpddsback->Blt(&border, m_Surface, NULL, DDBLT_WAIT | DDBLT_KEYSRC, NULL);
-	HDC hdc;
-	lpddsback->GetDC(&hdc);
-	HFONT hf;
-	LOGFONT lf;
+	CFont CurText;
+	lpddsback->GetDC(&CurText.hdc);
+	CurText.SetType(20, 10, 1000);
+	CurText.Uself();
+	SetBkColor(CurText.hdc, RGB(0, 0, 0));
+	//SetBkMode(hdc, TRANSPARENT);
+	SetTextColor(CurText.hdc, RGB(255, 255, 255));
+	TextOut(CurText.hdc, m_x + 60, m_y + 5, m_title.c_str(), m_title.size());
+	TextOut(CurText.hdc, m_x + 60, m_y + 25, m_context.c_str(), m_context.size());
+	lpddsback->ReleaseDC(CurText.hdc);
+}
+
+CFont::CFont() {
 	lf.lfHeight = 20;
 	lf.lfWidth = 10;
 	lf.lfEscapement = 0;
@@ -311,12 +329,18 @@ void CAchievement::Draw()
 	lf.lfPitchAndFamily = 0;
 	lf.lfOutPrecision = 0;
 	strcpy(lf.lfFaceName, "Comic Sans");
+}
+
+void CFont::SetType(int height, int width, int weight)
+{
+	lf.lfHeight = height;
+	lf.lfWidth = width;
+	lf.lfWeight = weight;
+}
+
+void CFont::Uself()
+{
 	hf = CreateFontIndirect(&lf);
 	SelectObject(hdc, hf);
-	SetBkColor(hdc, RGB(0, 0, 0));
-	//SetBkMode(hdc, TRANSPARENT);
-	SetTextColor(hdc, RGB(255, 255, 255));
-	TextOut(hdc, m_x + 60, m_y + 5, m_title.c_str(), m_title.size());
-	TextOut(hdc, m_x + 60, m_y + 25, m_context.c_str(), m_context.size());
-	lpddsback->ReleaseDC(hdc);
+	DeleteObject(hf);
 }

@@ -129,4 +129,5 @@ private:
 public:
     void Start_Clock() { m_dwStartTime = GetTickCount64(); }
     void Wait_Clock(DWORD dwcount) { while (GetTickCount64() - m_dwStartTime <= dwcount); }
+    int Get_Time() { return (GetTickCount64() - m_dwStartTime) / 1000; }
 };

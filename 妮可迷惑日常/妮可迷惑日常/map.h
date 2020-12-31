@@ -65,6 +65,7 @@ class CMap
 public:
 	CMap() {};
 	void Create(int AllModelLength, int Hardness, int SilenceLow, int Silencehigh);
+	void CreateMulti(int ModelNumber, char* Hardness, char* ModelID);
 	void GetRandMap();
 	void RecvMap(char* Msg);//receive map data from the server;
 
